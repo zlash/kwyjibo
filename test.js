@@ -15,17 +15,12 @@ MyController = __decorate([
     K.Controller("/"), 
     __metadata('design:paramtypes', [])
 ], MyController);
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = MyController;
 let MyDevController = class MyDevController {
 };
 MyDevController = __decorate([
     K.Controller(MyController, "/dev"),
     //will mount in [root for MyController]/dev
-    K.Dev(),
-    K.Middleware(Middleware1, Middleware2), 
+    K.Dev(), 
     __metadata('design:paramtypes', [])
 ], MyDevController);
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = MyDevController;
 //# sourceMappingURL=test.js.map

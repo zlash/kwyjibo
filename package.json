@@ -1,0 +1,27 @@
+{
+  "name": "kwyjibo",
+  "version": "1.0.0",
+  "description": "A set of Typescript Decorators and helpers to write better node.js+Express applications.",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zlash/kwyjibo.git"
+  },
+  "keywords": [
+    "typescript",
+    "ts",
+    "express",
+    "decorators",
+    "helpers",
+    "controller"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zlash/kwyjibo/issues"
+  },
+  "homepage": "https://github.com/zlash/kwyjibo#readme"
+}

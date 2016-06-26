@@ -8,11 +8,10 @@ class KwyjiboController {
          * it was explicitly declared.
          */
         this.explicitlyDeclared = false;
-        
         /**
-         * Set to false to avoid mounting this controller.
+         * If mountCondition is false, the controller not be mounted.
          */
-        this.mount = true;
+        this.mountCondition = true;
     }
 }
 class KwyjiboInternalState {
@@ -61,4 +60,34 @@ function Controller(mountpoint, path) {
     };
 }
 exports.Controller = Controller;
+/**
+ * @param { boolean } condition - Only mounts this controller if condition is true.
+ */
+function MountCondition(condition) {
+    return (ctr) => {
+        let c = globalKState.getOrInsertController(ctr);
+        c.mountCondition = c.mountCondition && condition;
+    };
+}
+exports.MountCondition = MountCondition;
+/**
+ * @param { boolean } condition - Only mounts this controller if condition is true.
+ */
+function MountCondition(condition) {
+    return (ctr) => {
+        let c = globalKState.getOrInsertController(ctr);
+        c.mountCondition = c.mountCondition && condition;
+    };
+}
+exports.MountCondition = MountCondition;
+/**
+ *  Only mounts this controller if NODE_ENV is set to "development"
+ */
+function Dev() {
+    return (ctr) => {
+        let c = globalKState.getOrInsertController(ctr);
+        c.mountCondition = c.mountCondition && process.env.NODE_ENV === "development";
+    };
+}
+exports.Dev = Dev;
 //# sourceMappingURL=controller.js.map

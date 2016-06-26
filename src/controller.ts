@@ -1,16 +1,23 @@
+import * as Express from "express";
+import * as Http from "http";
 import * as Utils from "./utils"
 
 type ControllerConstructor<T> = { new (...args: any[]): T; };
 
 class KwyjiboController {
     path: string = "";
-
+    ctr: Function;
+    
     /**
      * Set to true by the Controller decorator to assert that 
      * it was explicitly declared.
      */
-    explicitlyDeclared: boolean = true;
-    ctr: Function;
+    explicitlyDeclared: boolean = false;
+    
+    /**
+     * If mountCondition is false, the controller not be mounted.
+     */
+    mountCondition: boolean = true;
 }
 
 type KwyjiboControllerMap = { [key: string]: KwyjiboController };
@@ -63,5 +70,35 @@ export function Controller<T>(mountpoint: string | ControllerConstructor<T>, pat
             c.path = ctr.name;
         }
         c.path = Utils.UrlJoin("/", c.path);
+    };
+}
+
+/** 
+ * @param { boolean } condition - Only mounts this controller if condition is true. 
+ */
+export function MountCondition(condition: boolean): (Function) => void {
+    return (ctr: Function) => {
+        let c = globalKState.getOrInsertController(ctr);
+        c.mountCondition = c.mountCondition && condition;
+    };
+}
+
+/** 
+ * @param { boolean } condition - Only mounts this controller if condition is true. 
+ */
+export function MountCondition(condition: boolean): (Function) => void {
+    return (ctr: Function) => {
+        let c = globalKState.getOrInsertController(ctr);
+        c.mountCondition = c.mountCondition && condition;
+    };
+}
+
+/** 
+ *  Only mounts this controller if NODE_ENV is set to "development"
+ */
+export function Dev(): (Function) => void {
+    return (ctr: Function) => {
+        let c = globalKState.getOrInsertController(ctr);
+        c.mountCondition = c.mountCondition && process.env.NODE_ENV==="development";
     };
 }
