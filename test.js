@@ -28,7 +28,8 @@ let MyController = class MyController {
     }
 };
 __decorate([
-    K.Get(), 
+    K.Get(),
+    K.DocAction("My documentation for the action"), 
     __metadata('design:type', Function), 
     __metadata('design:paramtypes', [K.Context]), 
     __metadata('design:returntype', void 0)
@@ -58,14 +59,15 @@ __decorate([
     __metadata('design:returntype', void 0)
 ], MyController.prototype, "getSomething2", null);
 __decorate([
-    K.ExpressCompatible,
+    K.ExpressCompatible(),
     K.Get("oldEndpoint"), 
     __metadata('design:type', Function), 
     __metadata('design:paramtypes', [Object, Object, Object]), 
     __metadata('design:returntype', void 0)
 ], MyController.prototype, "getSomethingPortedFromExpress", null);
 MyController = __decorate([
-    K.Controller("/"), 
+    K.Controller("/"),
+    K.DocController("Documentation for my controller"), 
     __metadata('design:paramtypes', [])
 ], MyController);
 let MyDevController = class MyDevController {
@@ -76,4 +78,5 @@ MyDevController = __decorate([
     K.Dev(), 
     __metadata('design:paramtypes', [])
 ], MyDevController);
+K.DumpInternals();
 //# sourceMappingURL=test.js.map

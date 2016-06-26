@@ -1,11 +1,16 @@
 "use strict";
-const Utils = require("./utils");
 /**
  * Contains context for the current call .
  */
 class Context {
 }
 exports.Context = Context;
+/**
+ * Entry point
+ */
+function addControllersToExpressApp(app) {
+}
+exports.addControllersToExpressApp = addControllersToExpressApp;
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -23,14 +28,14 @@ function Controller(mountpoint, path) {
                 c.path = mountpoint;
             }
             else {
-                globalKState.registerMountPoint(mountpoint["new"], ctr);
+                globalKState.registerMountPoint(mountpoint, ctr);
                 c.path = (typeof (path) === "string") ? path : ctr.name;
             }
         }
         else {
             c.path = ctr.name;
         }
-        c.path = Utils.UrlJoin("/", c.path);
+        c.path = UrlJoin("/", c.path);
     };
 }
 exports.Controller = Controller;
@@ -64,12 +69,24 @@ function Dev() {
     return MountCondition(process.env.NODE_ENV === "development");
 }
 exports.Dev = Dev;
+/**
+ *  Attach a documentation string to the controller
+ *  @param {string} docStr - The documentation string.
+ */
+function DocController(docStr) {
+    return (ctr) => {
+        globalKState.getOrInsertController(ctr).docString = docStr;
+    };
+}
+exports.DocController = DocController;
 /*********************************************************
  * Method Decorators
  *********************************************************/
 function Method(method, path) {
     return function (target, propertyKey, descriptor) {
-        //TODO: Fill
+        path = (path != undefined) ? path : propertyKey;
+        let m = globalKState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        m.methodMountpoints.push({ "path": UrlJoin("/", path), "httpMethod": method });
     };
 }
 exports.Method = Method;
@@ -87,7 +104,10 @@ exports.Post = Post;
  */
 function Middleware(...middleware) {
     return function (target, propertyKey, descriptor) {
-        //TODO: Fill
+        if (middleware != undefined) {
+            let m = globalKState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+            m.middleware = middleware.concat(m.middleware);
+        }
     };
 }
 exports.Middleware = Middleware;
@@ -96,13 +116,94 @@ exports.Middleware = Middleware;
  */
 function ExpressCompatible() {
     return function (target, propertyKey, descriptor) {
-        //TODO: Fill
+        let m = globalKState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        m.expressCompatible = true;
     };
 }
 exports.ExpressCompatible = ExpressCompatible;
+/**
+ *  Attach a documentation string to the method
+ *  @param {string} docStr - The documentation string.
+ */
+function DocAction(docStr) {
+    return function (target, propertyKey, descriptor) {
+        let m = globalKState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        m.docString = docStr;
+    };
+}
+exports.DocAction = DocAction;
+function MapParameterToRequestValue(rvc, valueKey) {
+    return function (target, propertyKey, parameterIndex) {
+        let m = globalKState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
+    };
+}
+exports.MapParameterToRequestValue = MapParameterToRequestValue;
+function FromBody(valueKey) {
+    return MapParameterToRequestValue("body", valueKey);
+}
+exports.FromBody = FromBody;
+function FromQuery(valueKey) {
+    return MapParameterToRequestValue("query", valueKey);
+}
+exports.FromQuery = FromQuery;
+function FromPath(valueKey) {
+    return MapParameterToRequestValue("path", valueKey);
+}
+exports.FromPath = FromPath;
+function FromHeader(valueKey) {
+    return MapParameterToRequestValue("header", valueKey);
+}
+exports.FromHeader = FromHeader;
+function FromCookie(valueKey) {
+    return MapParameterToRequestValue("cookie", valueKey);
+}
+exports.FromCookie = FromCookie;
+/*********************************************************
+ * Utils
+ *********************************************************/
+function DumpInternals() {
+    for (let ck in globalKState.controllers) {
+        console.log("============================================");
+        console.log(`Controller on path ${globalKState.controllers[ck].path} built from Class ${globalKState.controllers[ck].ctr.name}`);
+        console.log("With Methods:");
+        for (let mk in globalKState.controllers[ck].methods) {
+            let m = globalKState.controllers[ck].methods[mk];
+            console.log(`== ${mk} ==`);
+            console.log(m);
+            console.log("");
+        }
+    }
+}
+exports.DumpInternals = DumpInternals;
+function UrlJoin(...parts) {
+    let ret = parts.join("/");
+    // remove consecutive slashes
+    ret = ret.replace(/([^\/]*)\/+/g, "$1/");
+    // make sure protocol is followed by two slashes
+    ret = ret.replace(/(:\/|:\/\/)/g, "://");
+    // remove trailing slash before parameters or hash
+    ret = ret.replace(/\/(\?|&|#[^!])/g, "$1");
+    // replace ? in parameters with &
+    ret = ret.replace(/(\?.+)\?/g, "$1&");
+    return ret;
+}
+exports.UrlJoin = UrlJoin;
+class KwyjiboMethod {
+    constructor() {
+        this.methodMountpoints = [];
+        this.middleware = [];
+        this.extraParametersMappings = [];
+        this.expressCompatible = false;
+        this.docString = "";
+    }
+}
 class KwyjiboController {
     constructor() {
         this.middleware = [];
+        this.methods = {};
+        this.docString = "";
+        this.childController = false;
         /**
          * Set to true by the Controller decorator to assert that
          * it was explicitly declared.
@@ -112,6 +213,12 @@ class KwyjiboController {
          * If mountCondition is false, the controller not be mounted.
          */
         this.mountCondition = true;
+    }
+    getOrInsertMethod(key) {
+        if (this.methods[key] == undefined) {
+            this.methods[key] = new KwyjiboMethod();
+        }
+        return this.methods[key];
     }
 }
 class KwyjiboInternalState {
@@ -128,6 +235,7 @@ class KwyjiboInternalState {
         return this.controllers[key];
     }
     registerMountPoint(dstCtr, ctr) {
+        this.getOrInsertController(ctr).childController = true;
         this.mountpoints.push({ "dstCtr": dstCtr, "ctr": ctr });
     }
 }

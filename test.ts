@@ -3,9 +3,11 @@ import HTTPMethod from './src/httpMethod'
 
 
 @K.Controller("/")
+@K.DocController("Documentation for my controller")
 class MyController {
 
 	@K.Get()	
+    @K.DocAction("My documentation for the action")
 	getSomething(context:K.Context): void {
 		
 		let req = context.request;
@@ -33,7 +35,7 @@ class MyController {
 
 	}
 
-	@K.ExpressCompatible
+	@K.ExpressCompatible()
 	@K.Get("oldEndpoint")
 	getSomethingPortedFromExpress(req, res, next) {
 
@@ -45,3 +47,5 @@ class MyController {
 class MyDevController {
 
 }
+
+K.DumpInternals();
