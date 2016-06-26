@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/zlash/kwyjibo/issues"
   },
-  "homepage": "https://github.com/zlash/kwyjibo#readme"
+  "homepage": "https://github.com/zlash/kwyjibo#readme",
+  "dependencies": {
+    "express": "^4.14.0"
+  }
 }

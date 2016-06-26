@@ -4,6 +4,11 @@
         "sourceMap": true,
         "target": "es6",
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true        
-    }
+        "emitDecoratorMetadata": true
+    },
+    "exclude": [
+        "node_modules",
+        "bower_components",
+        "jspm_packages"
+    ]
 }
