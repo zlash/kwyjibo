@@ -1,7 +1,10 @@
 import * as Express from "express";
 import * as Http from "http";
-import * as C from "./controller";
-import * as T from "./testing"
+import * as U from "./utils"
+
+export interface IDisposable {
+    dispose(): void;
+}
 
 /**
  * Contains context for the current call . 
@@ -10,14 +13,24 @@ export class Context {
     request: Express.Request;
     response: Express.Response;
     nextMiddleware: Function;
-}
 
+    private disposableInstances: IDisposable[];
 
-/**
- * Entry point
- */
-export function addControllersToExpressApp(app: Express.Application): void {
-    C.addControllersToExpressApp(app);
+    constructor() {
+        this.disposableInstances = [];
+    }
+
+    create<T extends IDisposable>(tFactory: { new (...args: any[]): T; }, ...args: any[]): T {
+        let instance = new tFactory(...args);
+        this.disposableInstances.push(instance);
+        return instance;
+    }
+
+    dispose(): void {
+        for (let instance of this.disposableInstances) {
+            instance.dispose();
+        }
+    }
 }
 
 /*********************************************************
@@ -29,21 +42,21 @@ export function addControllersToExpressApp(app: Express.Application): void {
  * @param { string | Controller } [mountpoint] - An string indicating a path, or a Controller to mount over. If not present, the name of the class will be used as path.
  * @param { string } [path] - Used if mountpoint is a Controller. If not present, the name of the class will be used as path.     
  */
-export function Controller<T>(mountpoint: string | C.ControllerConstructor<T>, path?: string): (Function) => void {
+export function Controller<T>(mountpoint?: string | KwyjiboControllerConstructor<T>, path?: string): (Function) => void {
     return (ctr: Function) => {
-        let c = C.globalKCState.getOrInsertController(ctr);
+        let c = globalKCState.getOrInsertController(ctr);
         c.explicitlyDeclared = true;
         if (mountpoint != undefined) {
             if (typeof (mountpoint) === "string") {
                 c.path = mountpoint as string;
             } else {
-                C.globalKCState.registerMountPoint(mountpoint as any, ctr);
+                globalKCState.registerMountPoint(mountpoint as any, ctr);
                 c.path = (typeof (path) === "string") ? path : ctr.name;
             }
         } else {
             c.path = ctr.name;
         }
-        c.path = UrlJoin("/", c.path);
+        c.path = U.UrlJoin("/", c.path);
     };
 }
 
@@ -51,10 +64,10 @@ export function Controller<T>(mountpoint: string | C.ControllerConstructor<T>, p
  * Adds express middleware to run before mounting the controller 
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-export function MountMiddleware(...middleware: Express.RequestHandler[]): (Function) => void {
+export function Middleware(...middleware: Express.RequestHandler[]): (Function) => void {
     return (ctr: Function) => {
         if (middleware != undefined) {
-            let c = C.globalKCState.getOrInsertController(ctr);
+            let c = globalKCState.getOrInsertController(ctr);
             c.middleware = middleware.concat(c.middleware);
         }
     };
@@ -65,7 +78,7 @@ export function MountMiddleware(...middleware: Express.RequestHandler[]): (Funct
  */
 export function MountCondition(condition: boolean): (Function) => void {
     return (ctr: Function) => {
-        let c = C.globalKCState.getOrInsertController(ctr);
+        let c = globalKCState.getOrInsertController(ctr);
         c.mountCondition = c.mountCondition && condition;
     };
 }
@@ -78,36 +91,23 @@ export function Dev(): (Function) => void {
 }
 
 /**
- * Generate test runner paths inside this controller
- */
-export function TestRunner(): (Function) => void {
-    return (ctr: Function) => {
-        C.globalKCState.getOrInsertController(ctr).generateTestRunnerPaths = true;
-    };
-}
-
-/**
  *  Attach a documentation string to the controller
  *  @param {string} docStr - The documentation string.
  */
 export function DocController(docStr: string): (Function) => void {
     return (ctr: Function) => {
-        C.globalKCState.getOrInsertController(ctr).docString = docStr;
+        globalKCState.getOrInsertController(ctr).docString = docStr;
     };
 }
 
 /**
- *  Registers a fixture of tests with the global test runner.
- *  @param {string} humanReadableName - The human readable name for the fixture
+ * Generate test runner paths inside this controller
  */
-export function Fixture(humanReadableName?: string): (Function) => void {
+export function TestRunner(): (Function) => void {
     return (ctr: Function) => {
-        let fixture = T.globalKTState.getOrInsertFixture(ctr);
-        fixture.humanReadableName = typeof (humanReadableName) === "string" ? humanReadableName : ctr.name;
-        fixture.explicitlyDeclared = true;
+        globalKCState.getOrInsertController(ctr).generateTestRunnerPaths = true;
     };
 }
-
 
 /*********************************************************
  * Method Decorators  
@@ -116,8 +116,8 @@ export function Fixture(humanReadableName?: string): (Function) => void {
 export function Method(method: string, path?: string): (any, string, PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         path = (path != undefined) ? path : propertyKey;
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
-        m.methodMountpoints.push({ "path": UrlJoin("/", path), "httpMethod": method });
+        let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        m.methodMountpoints.push({ "path": U.UrlJoin("/", path), "httpMethod": method });
         m.explicitlyDeclared = true;
     };
 }
@@ -134,10 +134,10 @@ export function Post(path?: string): (any, string, PropertyDescriptor) => void {
  * Adds express middleware to run before the method 
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-export function Middleware(...middleware: Express.RequestHandler[]): (any, string, PropertyDescriptor) => void {
+export function ActionMiddleware(...middleware: Express.RequestHandler[]): (any, string, PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         if (middleware != undefined) {
-            let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+            let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
             m.middleware = middleware.concat(m.middleware);
         }
     };
@@ -148,7 +148,7 @@ export function Middleware(...middleware: Express.RequestHandler[]): (any, strin
  */
 export function ExpressCompatible(): (any, string, PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.expressCompatible = true;
     };
 }
@@ -160,40 +160,8 @@ export function ExpressCompatible(): (any, string, PropertyDescriptor) => void {
  */
 export function DocAction(docStr: string): (any, string, PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.docString = docStr;
-    };
-}
-
-/**
- *  Register a new test. If the test throws it fails, otherwise it passes.
- *  @param {string} humanReadableName - The human readable name for this test.
- */
-export function Test(humanReadableName: string): (any, string, PropertyDescriptor) => void {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        let f = T.globalKTState.getOrInsertFixture(target.constructor);
-        let t = f.getOrInsertTest(propertyKey);
-        t.humanReadableName = humanReadableName;
-        t.explicitlyDeclared = true;
-    };
-}
-
-
-/**
- *  Method to run before any of the tests.
- */
-export function Before(): (any, string, PropertyDescriptor) => void {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        T.globalKTState.getOrInsertFixture(target.constructor).runBeforeMethods.push(propertyKey);
-    };
-}
-
-/**
- *  Method to run after any of the tests.
- */
-export function After(): (any, string, PropertyDescriptor) => void {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        T.globalKTState.getOrInsertFixture(target.constructor).runAfterMethods.push(propertyKey);
     };
 }
 
@@ -206,7 +174,7 @@ export type RequestValueContainer = "body" | "query" | "path" | "header" | "cook
 
 export function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
     return function (target: any, propertyKey: string, parameterIndex: number) {
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
     };
 }
@@ -235,12 +203,12 @@ export function FromCookie(valueKey: string): (target: Object, propertyKey: stri
  *********************************************************/
 
 export function DumpInternals(): void {
-    for (let ck in C.globalKCState.controllers) {
+    for (let ck in globalKCState.controllers) {
         console.log("============================================");
-        console.log(`Controller on path ${C.globalKCState.controllers[ck].path} built from Class ${C.globalKCState.controllers[ck].ctr.name}`);
+        console.log(`Controller on path ${globalKCState.controllers[ck].path} built from Class ${globalKCState.controllers[ck].ctr.name}`);
         console.log("With Methods:");
-        for (let mk in C.globalKCState.controllers[ck].methods) {
-            let m = C.globalKCState.controllers[ck].methods[mk];
+        for (let mk in globalKCState.controllers[ck].methods) {
+            let m = globalKCState.controllers[ck].methods[mk];
             console.log(`== ${mk} ==`);
             console.log(m);
             console.log("");
@@ -248,24 +216,92 @@ export function DumpInternals(): void {
     }
 }
 
-export function UrlJoin(...parts: string[]): string {
-    let ret = parts.join("/");
+/*********************************************************
+ * Internals
+ *********************************************************/
 
-    // remove consecutive slashes
-    ret = ret.replace(/([^\/]*)\/+/g, "$1/");
 
-    // make sure protocol is followed by two slashes
-    ret = ret.replace(/(:\/|:\/\/)/g, "://");
+export type KwyjiboMethodMountpoint = { path: string; httpMethod: string };
+export type KwyjiboExtraParametersMapping = { rvc: RequestValueContainer; valueKey: string };
 
-    // remove trailing slash before parameters or hash
-    ret = ret.replace(/\/(\?|&|#[^!])/g, "$1");
-
-    // replace ? in parameters with &
-    ret = ret.replace(/(\?.+)\?/g, "$1&");
-
-    return ret;
+export class KwyjiboMethod {
+    methodMountpoints: KwyjiboMethodMountpoint[] = [];
+    middleware: Express.RequestHandler[] = [];
+    extraParametersMappings: KwyjiboExtraParametersMapping[] = [];
+    expressCompatible: boolean = false;
+    docString: string = "";
+    explicitlyDeclared: boolean = false;
 }
 
+export type KwyjiboMethodMap = { [key: string]: KwyjiboMethod };
+export type KwyjiboControllerConstructor<T> = { new (...args: any[]): T; };
 
+export class KwyjiboController {
+    path: string;
+    ctr: Function;
+    middleware: Express.RequestHandler[] = [];
+    methods: KwyjiboMethodMap = {};
+    docString: string = "";
 
+    generateTestRunnerPaths: boolean = false;
+    childController: boolean = false;
 
+    /**
+     * Set to true by the Controller decorator to assert that 
+     * it was explicitly declared.
+     */
+    explicitlyDeclared: boolean = false;
+
+    /**
+     * If mountCondition is false, the controller not be mounted.
+     */
+    mountCondition: boolean = true;
+
+    getOrInsertMethod(key: string): KwyjiboMethod {
+        if (this.methods[key] == undefined) {
+            this.methods[key] = new KwyjiboMethod();
+        }
+        return this.methods[key];
+    }
+
+}
+
+export type KwyjiboControllerMap = { [key: string]: KwyjiboController };
+export type KwyjiboMountpoint = { dstCtr: Function; ctr: Function };
+
+export class KwyjiboControllersState {
+
+    controllers: KwyjiboControllerMap = {};
+    mountpoints: KwyjiboMountpoint[] = [];
+
+    getOrInsertController(ctr: Function): KwyjiboController {
+        let key = ctr.toString();
+        if (this.controllers[key] == undefined) {
+            this.controllers[key] = new KwyjiboController();
+            this.controllers[key].ctr = ctr;
+        }
+        return this.controllers[key];
+    }
+
+    registerMountPoint(dstCtr: any, ctr: Function): void {
+        this.getOrInsertController(ctr).childController = true;
+        this.mountpoints.push({ "dstCtr": dstCtr, "ctr": ctr });
+    }
+
+}
+
+export let globalKCState = new KwyjiboControllersState();
+
+export function addControllersToExpressApp(app: Express.Application): void {
+    console.log("Adding controllers to Express App");
+
+    //A method without paths, defaults to get with the name of the method as path
+    for (let ck in globalKCState.controllers) {
+        let c = globalKCState.controllers[ck];
+        if (c.childController === false) {
+            console.log(c.ctr.name);
+        }
+
+    }
+
+}

@@ -1,19 +1,24 @@
 "use strict";
-const C = require("./controller");
-const T = require("./testing");
+const U = require("./utils");
 /**
  * Contains context for the current call .
  */
 class Context {
+    constructor() {
+        this.disposableInstances = [];
+    }
+    create(tFactory, ...args) {
+        let instance = new tFactory(...args);
+        this.disposableInstances.push(instance);
+        return instance;
+    }
+    dispose() {
+        for (let instance of this.disposableInstances) {
+            instance.dispose();
+        }
+    }
 }
 exports.Context = Context;
-/**
- * Entry point
- */
-function addControllersToExpressApp(app) {
-    C.addControllersToExpressApp(app);
-}
-exports.addControllersToExpressApp = addControllersToExpressApp;
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -24,21 +29,21 @@ exports.addControllersToExpressApp = addControllersToExpressApp;
  */
 function Controller(mountpoint, path) {
     return (ctr) => {
-        let c = C.globalKCState.getOrInsertController(ctr);
+        let c = exports.globalKCState.getOrInsertController(ctr);
         c.explicitlyDeclared = true;
         if (mountpoint != undefined) {
             if (typeof (mountpoint) === "string") {
                 c.path = mountpoint;
             }
             else {
-                C.globalKCState.registerMountPoint(mountpoint, ctr);
+                exports.globalKCState.registerMountPoint(mountpoint, ctr);
                 c.path = (typeof (path) === "string") ? path : ctr.name;
             }
         }
         else {
             c.path = ctr.name;
         }
-        c.path = UrlJoin("/", c.path);
+        c.path = U.UrlJoin("/", c.path);
     };
 }
 exports.Controller = Controller;
@@ -46,21 +51,21 @@ exports.Controller = Controller;
  * Adds express middleware to run before mounting the controller
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-function MountMiddleware(...middleware) {
+function Middleware(...middleware) {
     return (ctr) => {
         if (middleware != undefined) {
-            let c = C.globalKCState.getOrInsertController(ctr);
+            let c = exports.globalKCState.getOrInsertController(ctr);
             c.middleware = middleware.concat(c.middleware);
         }
     };
 }
-exports.MountMiddleware = MountMiddleware;
+exports.Middleware = Middleware;
 /**
  * @param { boolean } condition - Only mounts this controller if condition is true.
  */
 function MountCondition(condition) {
     return (ctr) => {
-        let c = C.globalKCState.getOrInsertController(ctr);
+        let c = exports.globalKCState.getOrInsertController(ctr);
         c.mountCondition = c.mountCondition && condition;
     };
 }
@@ -73,44 +78,32 @@ function Dev() {
 }
 exports.Dev = Dev;
 /**
- * Generate test runner paths inside this controller
- */
-function TestRunner() {
-    return (ctr) => {
-        C.globalKCState.getOrInsertController(ctr).generateTestRunnerPaths = true;
-    };
-}
-exports.TestRunner = TestRunner;
-/**
  *  Attach a documentation string to the controller
  *  @param {string} docStr - The documentation string.
  */
 function DocController(docStr) {
     return (ctr) => {
-        C.globalKCState.getOrInsertController(ctr).docString = docStr;
+        exports.globalKCState.getOrInsertController(ctr).docString = docStr;
     };
 }
 exports.DocController = DocController;
 /**
- *  Registers a fixture of tests with the global test runner.
- *  @param {string} humanReadableName - The human readable name for the fixture
+ * Generate test runner paths inside this controller
  */
-function Fixture(humanReadableName) {
+function TestRunner() {
     return (ctr) => {
-        let fixture = T.globalKTState.getOrInsertFixture(ctr);
-        fixture.humanReadableName = typeof (humanReadableName) === "string" ? humanReadableName : ctr.name;
-        fixture.explicitlyDeclared = true;
+        exports.globalKCState.getOrInsertController(ctr).generateTestRunnerPaths = true;
     };
 }
-exports.Fixture = Fixture;
+exports.TestRunner = TestRunner;
 /*********************************************************
  * Method Decorators
  *********************************************************/
 function Method(method, path) {
     return function (target, propertyKey, descriptor) {
         path = (path != undefined) ? path : propertyKey;
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
-        m.methodMountpoints.push({ "path": UrlJoin("/", path), "httpMethod": method });
+        let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        m.methodMountpoints.push({ "path": U.UrlJoin("/", path), "httpMethod": method });
         m.explicitlyDeclared = true;
     };
 }
@@ -127,21 +120,21 @@ exports.Post = Post;
  * Adds express middleware to run before the method
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-function Middleware(...middleware) {
+function ActionMiddleware(...middleware) {
     return function (target, propertyKey, descriptor) {
         if (middleware != undefined) {
-            let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+            let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
             m.middleware = middleware.concat(m.middleware);
         }
     };
 }
-exports.Middleware = Middleware;
+exports.ActionMiddleware = ActionMiddleware;
 /**
  * Flags the method as "Express Compatible" and thus will be called with parameters (req,res,next)
  */
 function ExpressCompatible() {
     return function (target, propertyKey, descriptor) {
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.expressCompatible = true;
     };
 }
@@ -152,45 +145,14 @@ exports.ExpressCompatible = ExpressCompatible;
  */
 function DocAction(docStr) {
     return function (target, propertyKey, descriptor) {
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.docString = docStr;
     };
 }
 exports.DocAction = DocAction;
-/**
- *  Register a new test. If the test throws it fails, otherwise it passes.
- *  @param {string} humanReadableName - The human readable name for this test.
- */
-function Test(humanReadableName) {
-    return function (target, propertyKey, descriptor) {
-        let f = T.globalKTState.getOrInsertFixture(target.constructor);
-        let t = f.getOrInsertTest(propertyKey);
-        t.humanReadableName = humanReadableName;
-        t.explicitlyDeclared = true;
-    };
-}
-exports.Test = Test;
-/**
- *  Method to run before any of the tests.
- */
-function Before() {
-    return function (target, propertyKey, descriptor) {
-        T.globalKTState.getOrInsertFixture(target.constructor).runBeforeMethods.push(propertyKey);
-    };
-}
-exports.Before = Before;
-/**
- *  Method to run after any of the tests.
- */
-function After() {
-    return function (target, propertyKey, descriptor) {
-        T.globalKTState.getOrInsertFixture(target.constructor).runAfterMethods.push(propertyKey);
-    };
-}
-exports.After = After;
 function MapParameterToRequestValue(rvc, valueKey) {
     return function (target, propertyKey, parameterIndex) {
-        let m = C.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
     };
 }
@@ -219,12 +181,12 @@ exports.FromCookie = FromCookie;
  * Utils
  *********************************************************/
 function DumpInternals() {
-    for (let ck in C.globalKCState.controllers) {
+    for (let ck in exports.globalKCState.controllers) {
         console.log("============================================");
-        console.log(`Controller on path ${C.globalKCState.controllers[ck].path} built from Class ${C.globalKCState.controllers[ck].ctr.name}`);
+        console.log(`Controller on path ${exports.globalKCState.controllers[ck].path} built from Class ${exports.globalKCState.controllers[ck].ctr.name}`);
         console.log("With Methods:");
-        for (let mk in C.globalKCState.controllers[ck].methods) {
-            let m = C.globalKCState.controllers[ck].methods[mk];
+        for (let mk in exports.globalKCState.controllers[ck].methods) {
+            let m = exports.globalKCState.controllers[ck].methods[mk];
             console.log(`== ${mk} ==`);
             console.log(m);
             console.log("");
@@ -232,17 +194,70 @@ function DumpInternals() {
     }
 }
 exports.DumpInternals = DumpInternals;
-function UrlJoin(...parts) {
-    let ret = parts.join("/");
-    // remove consecutive slashes
-    ret = ret.replace(/([^\/]*)\/+/g, "$1/");
-    // make sure protocol is followed by two slashes
-    ret = ret.replace(/(:\/|:\/\/)/g, "://");
-    // remove trailing slash before parameters or hash
-    ret = ret.replace(/\/(\?|&|#[^!])/g, "$1");
-    // replace ? in parameters with &
-    ret = ret.replace(/(\?.+)\?/g, "$1&");
-    return ret;
+class KwyjiboMethod {
+    constructor() {
+        this.methodMountpoints = [];
+        this.middleware = [];
+        this.extraParametersMappings = [];
+        this.expressCompatible = false;
+        this.docString = "";
+        this.explicitlyDeclared = false;
+    }
 }
-exports.UrlJoin = UrlJoin;
-//# sourceMappingURL=kwyjibo.js.map
+exports.KwyjiboMethod = KwyjiboMethod;
+class KwyjiboController {
+    constructor() {
+        this.middleware = [];
+        this.methods = {};
+        this.docString = "";
+        this.generateTestRunnerPaths = false;
+        this.childController = false;
+        /**
+         * Set to true by the Controller decorator to assert that
+         * it was explicitly declared.
+         */
+        this.explicitlyDeclared = false;
+        /**
+         * If mountCondition is false, the controller not be mounted.
+         */
+        this.mountCondition = true;
+    }
+    getOrInsertMethod(key) {
+        if (this.methods[key] == undefined) {
+            this.methods[key] = new KwyjiboMethod();
+        }
+        return this.methods[key];
+    }
+}
+exports.KwyjiboController = KwyjiboController;
+class KwyjiboControllersState {
+    constructor() {
+        this.controllers = {};
+        this.mountpoints = [];
+    }
+    getOrInsertController(ctr) {
+        let key = ctr.toString();
+        if (this.controllers[key] == undefined) {
+            this.controllers[key] = new KwyjiboController();
+            this.controllers[key].ctr = ctr;
+        }
+        return this.controllers[key];
+    }
+    registerMountPoint(dstCtr, ctr) {
+        this.getOrInsertController(ctr).childController = true;
+        this.mountpoints.push({ "dstCtr": dstCtr, "ctr": ctr });
+    }
+}
+exports.KwyjiboControllersState = KwyjiboControllersState;
+exports.globalKCState = new KwyjiboControllersState();
+function addControllersToExpressApp(app) {
+    console.log("Adding controllers to Express App");
+    //A method without paths, defaults to get with the name of the method as path
+    for (let ck in exports.globalKCState.controllers) {
+        let c = exports.globalKCState.controllers[ck];
+        if (c.childController === false) {
+            console.log(c.ctr.name);
+        }
+    }
+}
+exports.addControllersToExpressApp = addControllersToExpressApp;
