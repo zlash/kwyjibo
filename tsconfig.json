@@ -5,11 +5,12 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true, 
         "declaration": true,
-        "outDir": "../js"
+        "outDir": "./js"
     },
     "exclude": [
         "node_modules",
         "bower_components",
-        "jspm_packages"
+        "jspm_packages",
+        "js"
     ]
 }

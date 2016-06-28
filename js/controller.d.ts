@@ -112,6 +112,7 @@ export declare class KwyjiboController {
     middleware: Express.RequestHandler[];
     methods: KwyjiboMethodMap;
     docString: string;
+    router: Express.Router;
     generateTestRunnerPaths: boolean;
     childController: boolean;
     /**
@@ -135,8 +136,9 @@ export declare type KwyjiboMountpoint = {
 export declare class KwyjiboControllersState {
     controllers: KwyjiboControllerMap;
     mountpoints: KwyjiboMountpoint[];
+    getController(ctr: Function): KwyjiboController;
     getOrInsertController(ctr: Function): KwyjiboController;
     registerMountPoint(dstCtr: any, ctr: Function): void;
 }
 export declare let globalKCState: KwyjiboControllersState;
-export declare function addControllersToExpressApp(app: Express.Application): void;
+export declare function addControllersToExpressApp(app: Express.Application, rootPath?: string): void;

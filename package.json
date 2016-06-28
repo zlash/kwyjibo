@@ -23,7 +23,9 @@
     "controller",
     "test",
     "testing",
-    "promise"
+    "promise",
+    "mvc",
+    "framework"
   ],
   "author": "Miguel Ángel Pérez Martínez",
   "license": "MIT",
