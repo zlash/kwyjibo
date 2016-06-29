@@ -1,6 +1,7 @@
 import * as Express from "express";
 import * as Http from "http";
 import * as U from "./utils"
+import * as D from "./documentation"
 
 export interface IDisposable {
     dispose(): void;
@@ -268,6 +269,14 @@ export class KwyjiboController {
 
 }
 
+export class KwyjiboControllerTreeNode {
+    controller: KwyjiboController;
+    childs: KwyjiboControllerTreeNode[] = [];
+    constructor(controller: KwyjiboController) {
+        this.controller = controller;
+    }
+}
+
 export type KwyjiboControllerMap = { [key: string]: KwyjiboController };
 export type KwyjiboMountpoint = { dstCtr: Function; ctr: Function };
 
@@ -275,6 +284,8 @@ export class KwyjiboControllersState {
 
     controllers: KwyjiboControllerMap = {};
     mountpoints: KwyjiboMountpoint[] = [];
+
+    controllersTree: KwyjiboControllerTreeNode[] = [];
 
     getController(ctr: Function): KwyjiboController {
         return this.controllers[ctr.toString()];
@@ -298,48 +309,28 @@ export class KwyjiboControllersState {
 
 export let globalKCState = new KwyjiboControllersState();
 
-function mountMethod(controller: KwyjiboController, instance: any, methodKey: string, method: KwyjiboMethod): void {
 
-    if (method.explicitlyDeclared === false) {
-        U.defaultWarn(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
-        method.methodMountpoints.push({ "path": `/${methodKey}`, "httpMethod": "get" });
+
+function addChildsToTreeNode(node: KwyjiboControllerTreeNode): void {
+
+    for (let mp of globalKCState.mountpoints) {
+        if (node.controller.ctr.toString() === mp.dstCtr.toString()) {
+            let child = new KwyjiboControllerTreeNode(globalKCState.getController(mp.ctr));
+            addChildsToTreeNode(child);
+            node.childs.push(child);
+        }
     }
+}
 
-    for (let mp of method.methodMountpoints) {
-        let callback = (req: Express.Request, res: Express.Response, next: Function) => {
-
-            let runner = async () => {
-                let ret;
-                let context = new Context();
-
-                if (method.expressCompatible) {
-                    ret = instance[methodKey](req, res, next);
-                } else {
-                    context.request = req;
-                    context.response = res;
-                    context.nextMiddleware = next;
-                    ret = instance[methodKey](context);
-                }
-
-                if (ret instanceof Promise) {
-                    ret = await ret;
-                }
-
-                if (ret instanceof Object) {
-                    res.json(ret);
-                } else if (typeof (ret) === "string") {
-                    res.send(ret);
-                }
-
-                context.dispose();
-            };
-
-            runner().catch((err) => { next(err); });
-
-        };
-        controller.router[mp.httpMethod](mp.path, ...method.middleware, callback);
+function buildControllersTree() {
+    for (let ck in globalKCState.controllers) {
+        let c = globalKCState.controllers[ck];
+        if (c.childController === false) {
+            let node = new KwyjiboControllerTreeNode(c);
+            addChildsToTreeNode(node);
+            globalKCState.controllersTree.push(node);
+        }
     }
-
 }
 
 function indexAutogenerator(mountpoint: KwyjiboController | string, childControllerPaths: string[]): (req: Express.Request, res: Express.Response) => void {
@@ -364,7 +355,58 @@ function indexAutogenerator(mountpoint: KwyjiboController | string, childControl
     };
 }
 
-function addControllerRecursive(app: Express.Application, controller: KwyjiboController): KwyjiboController {
+
+
+function mountMethod(controller: KwyjiboController, instance: any, methodKey: string): void {
+
+    let method: KwyjiboMethod = controller.methods[methodKey];
+
+    if (method.explicitlyDeclared === false) {
+        U.defaultWarn(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
+        method.methodMountpoints.push({ "path": `/${methodKey}`, "httpMethod": "get" });
+    }
+
+    for (let mp of method.methodMountpoints) {
+        let callback = (req: Express.Request, res: Express.Response, next: Function) => {
+
+            let context = new Context();
+
+            let runner = async () => {
+                let ret;
+
+                if (method.expressCompatible) {
+                    ret = instance[methodKey](req, res, next);
+                } else {
+                    context.request = req;
+                    context.response = res;
+                    context.nextMiddleware = next;
+                    ret = instance[methodKey](context);
+                }
+
+                if (ret instanceof Promise) {
+                    ret = await ret;
+                }
+
+                if (ret instanceof Object) {
+                    res.json(ret);
+                } else if (typeof (ret) === "string") {
+                    res.send(ret);
+                }
+            };
+
+            runner().then(() => { context.dispose(); })
+                .catch((err) => { context.dispose(); next(err); });
+
+        };
+        controller.router[mp.httpMethod](mp.path, ...method.middleware, callback);
+    }
+
+}
+
+
+function createRouterRecursive(app: Express.Application, controllerNode: KwyjiboControllerTreeNode): KwyjiboController {
+
+    let controller = controllerNode.controller;
 
     if (controller.mountCondition === false) {
         return undefined;
@@ -382,19 +424,13 @@ function addControllerRecursive(app: Express.Application, controller: KwyjiboCon
     }
 
     for (let mk in controller.methods) {
-        mountMethod(controller, instance, mk, controller.methods[mk]);
+        mountMethod(controller, instance, mk);
     }
 
-    let childControllerPaths: string[] = [];
-
-    for (let mp of globalKCState.mountpoints) {
-        if (controller.ctr.toString() === mp.dstCtr.toString()) {
-            let nc = addControllerRecursive(app, globalKCState.getController(mp.ctr));
-            if (nc != undefined) {
-                controller.router.use(nc.path, nc.router);
-                childControllerPaths.push(nc.path);
-            }
-
+    for (let child of controllerNode.childs) {
+        let nc = createRouterRecursive(app, child);
+        if (nc != undefined) {
+            controller.router.use(nc.path, nc.router);
         }
     }
 
@@ -409,17 +445,12 @@ export function addControllersToExpressApp(app: Express.Application, rootPath?: 
 
     rootPath = rootPath || "/";
 
-    //A method without paths, defaults to get with the name of the method as path
-    let childControllerPaths: string[] = [];
+    buildControllersTree();
 
-    for (let ck in globalKCState.controllers) {
-        let c = globalKCState.controllers[ck];
-        if (c.childController === false) {
-            let nc = addControllerRecursive(app, c);
-            if (nc != undefined) {
-                app.use(U.UrlJoin(rootPath, nc.path), nc.router);
-                childControllerPaths.push(nc.path);
-            }
+    for (let node of globalKCState.controllersTree) {
+        let nc = createRouterRecursive(app, node);
+        if (nc != undefined) {
+            app.use(U.UrlJoin(rootPath, nc.path), nc.router);
         }
     }
 
@@ -428,3 +459,4 @@ export function addControllersToExpressApp(app: Express.Application, rootPath?: 
     }
 
 }
+
