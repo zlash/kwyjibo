@@ -126,6 +126,11 @@ export declare class KwyjiboController {
     mountCondition: boolean;
     getOrInsertMethod(key: string): KwyjiboMethod;
 }
+export declare class KwyjiboControllerTreeNode {
+    controller: KwyjiboController;
+    childs: KwyjiboControllerTreeNode[];
+    constructor(controller: KwyjiboController);
+}
 export declare type KwyjiboControllerMap = {
     [key: string]: KwyjiboController;
 };
@@ -136,6 +141,7 @@ export declare type KwyjiboMountpoint = {
 export declare class KwyjiboControllersState {
     controllers: KwyjiboControllerMap;
     mountpoints: KwyjiboMountpoint[];
+    controllersTree: KwyjiboControllerTreeNode[];
     getController(ctr: Function): KwyjiboController;
     getOrInsertController(ctr: Function): KwyjiboController;
     registerMountPoint(dstCtr: any, ctr: Function): void;

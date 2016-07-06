@@ -1,6 +1,6 @@
 {
   "name": "kwyjibo",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A set of Typescript Decorators and helpers to write better node.js+Express applications.",
   "main": "js/index.js",
   "typings": "js/index",

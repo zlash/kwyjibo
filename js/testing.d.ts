@@ -1,3 +1,4 @@
+import * as C from "./controller";
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -44,8 +45,21 @@ export declare class KwyjiboFixture {
 export declare type KwyjiboFixtureMap = {
     [key: string]: KwyjiboFixture;
 };
+export declare class KwyjiboTestResult {
+    fixtureDesc: string;
+    fixtureKey: string;
+    testDesc: string;
+    testKey: string;
+    passed: boolean;
+    message: string;
+}
 export declare class KwyjiboTestsState {
     fixtures: KwyjiboFixtureMap;
     getOrInsertFixture(ctr: Function): KwyjiboFixture;
+    generateCompleteFixtureMetadata(): Object;
+    static getFixtureHashId(fixture: KwyjiboFixture): string;
+    generateRainbowTables(): Object;
+    run(testsToRun?: Object): Promise<KwyjiboTestResult[]>;
 }
 export declare let globalKTState: KwyjiboTestsState;
+export declare function injectTestRunnerMiddleware(controller: C.KwyjiboController): void;
