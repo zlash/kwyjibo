@@ -16,6 +16,7 @@ export declare class Context {
     }, ...args: any[]): T;
     dispose(): void;
 }
+export declare let globalKCState: KwyjiboControllersState;
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -24,49 +25,49 @@ export declare class Context {
  * @param { string | Controller } [mountpoint] - An string indicating a path, or a Controller to mount over. If not present, the name of the class will be used as path.
  * @param { string } [path] - Used if mountpoint is a Controller. If not present, the name of the class will be used as path.
  */
-export declare function Controller<T>(mountpoint?: string | KwyjiboControllerConstructor<T>, path?: string): (Function) => void;
+export declare function Controller<T>(mountpoint?: string | KwyjiboControllerConstructor<T>, path?: string): (f: Function) => void;
 /**
  * Adds express middleware to run before mounting the controller
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-export declare function Middleware(...middleware: Express.RequestHandler[]): (Function) => void;
+export declare function Middleware(...middleware: Express.RequestHandler[]): (f: Function) => void;
 /**
  * @param { boolean } condition - Only mounts this controller if condition is true.
  */
-export declare function MountCondition(condition: boolean): (Function) => void;
+export declare function MountCondition(condition: boolean): (f: Function) => void;
 /**
  *  Only mounts this controller if NODE_ENV is set to "development"
  */
-export declare function Dev(): (Function) => void;
+export declare function Dev(): (f: Function) => void;
 /**
  *  Attach a documentation string to the controller
  *  @param {string} docStr - The documentation string.
  */
-export declare function DocController(docStr: string): (Function) => void;
+export declare function DocController(docStr: string): (f: Function) => void;
 /**
  * Generate test runner paths inside this controller
  */
-export declare function TestRunner(): (Function) => void;
+export declare function TestRunner(): (f: Function) => void;
 /*********************************************************
  * Method Decorators
  *********************************************************/
-export declare function Method(method: string, path?: string): (any, string, PropertyDescriptor) => void;
-export declare function Get(path?: string): (any, string, PropertyDescriptor) => void;
-export declare function Post(path?: string): (any, string, PropertyDescriptor) => void;
+export declare function Method(method: string, path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Get(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Post(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  * Adds express middleware to run before the method
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-export declare function ActionMiddleware(...middleware: Express.RequestHandler[]): (any, string, PropertyDescriptor) => void;
+export declare function ActionMiddleware(...middleware: Express.RequestHandler[]): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  * Flags the method as "Express Compatible" and thus will be called with parameters (req,res,next)
  */
-export declare function ExpressCompatible(): (any, string, PropertyDescriptor) => void;
+export declare function ExpressCompatible(): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  *  Attach a documentation string to the method
  *  @param {string} docStr - The documentation string.
  */
-export declare function DocAction(docStr: string): (any, string, PropertyDescriptor) => void;
+export declare function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 /*********************************************************
  * Method Parameters Decorators
  *********************************************************/
@@ -146,5 +147,4 @@ export declare class KwyjiboControllersState {
     getOrInsertController(ctr: Function): KwyjiboController;
     registerMountPoint(dstCtr: any, ctr: Function): void;
 }
-export declare let globalKCState: KwyjiboControllersState;
 export declare function addControllersToExpressApp(app: Express.Application, rootPath?: string): void;

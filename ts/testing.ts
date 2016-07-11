@@ -3,6 +3,8 @@ import * as C from "./controller";
 import * as Crypto from "crypto";
 import * as U from "./utils";
 
+export let globalKTState: KwyjiboTestsState;
+
 /*********************************************************
  * Class Decorators  
  *********************************************************/
@@ -11,7 +13,7 @@ import * as U from "./utils";
  *  Registers a fixture of tests with the global test runner.
  *  @param {string} humanReadableName - The human readable name for the fixture
  */
-export function Fixture(humanReadableName?: string): (Function) => void {
+export function Fixture(humanReadableName?: string): (f: Function) => void {
     return (ctr: Function) => {
         let fixture = globalKTState.getOrInsertFixture(ctr);
         fixture.humanReadableName = typeof (humanReadableName) === "string" ? humanReadableName : ctr.name;
@@ -29,7 +31,7 @@ export function Fixture(humanReadableName?: string): (Function) => void {
  *  Register a new test. If the test throws it fails, otherwise it passes.
  *  @param {string} humanReadableName - The human readable name for this test.
  */
-export function Test(humanReadableName: string): (any, string, PropertyDescriptor) => void {
+export function Test(humanReadableName: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         let f = globalKTState.getOrInsertFixture(target.constructor);
         let t = f.getOrInsertTest(propertyKey);
@@ -42,7 +44,7 @@ export function Test(humanReadableName: string): (any, string, PropertyDescripto
 /**
  *  Method to run before any of the tests.
  */
-export function Before(): (any, string, PropertyDescriptor) => void {
+export function Before(): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         globalKTState.getOrInsertFixture(target.constructor).runBeforeMethods.push(propertyKey);
     };
@@ -51,7 +53,7 @@ export function Before(): (any, string, PropertyDescriptor) => void {
 /**
  *  Method to run after any of the tests.
  */
-export function After(): (any, string, PropertyDescriptor) => void {
+export function After(): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         globalKTState.getOrInsertFixture(target.constructor).runAfterMethods.push(propertyKey);
     };
@@ -202,7 +204,7 @@ export class KwyjiboTestsState {
     }
 }
 
-export let globalKTState = new KwyjiboTestsState();
+globalKTState = new KwyjiboTestsState();
 
 const defaultCSS = `
     body {
@@ -340,7 +342,7 @@ function generateInteractiveTestRunnerMiddleware(useFixture?: KwyjiboFixture): (
         <h2> Interactive Tests Runner </h2>
         `;
 
-        let useFixtureHash = undefined;
+        let useFixtureHash: string = undefined;
 
         if (useFixture == undefined) {
             content += `

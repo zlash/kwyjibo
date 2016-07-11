@@ -33,6 +33,8 @@ export class Context {
     }
 }
 
+export let globalKCState: KwyjiboControllersState;
+
 /*********************************************************
  * Class Decorators  
  *********************************************************/
@@ -42,7 +44,7 @@ export class Context {
  * @param { string | Controller } [mountpoint] - An string indicating a path, or a Controller to mount over. If not present, the name of the class will be used as path.
  * @param { string } [path] - Used if mountpoint is a Controller. If not present, the name of the class will be used as path.     
  */
-export function Controller<T>(mountpoint?: string | KwyjiboControllerConstructor<T>, path?: string): (Function) => void {
+export function Controller<T>(mountpoint?: string | KwyjiboControllerConstructor<T>, path?: string): (f: Function) => void {
     return (ctr: Function) => {
         let c = globalKCState.getOrInsertController(ctr);
         c.explicitlyDeclared = true;
@@ -64,7 +66,7 @@ export function Controller<T>(mountpoint?: string | KwyjiboControllerConstructor
  * Adds express middleware to run before mounting the controller 
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-export function Middleware(...middleware: Express.RequestHandler[]): (Function) => void {
+export function Middleware(...middleware: Express.RequestHandler[]): (f: Function) => void {
     return (ctr: Function) => {
         if (middleware != undefined) {
             let c = globalKCState.getOrInsertController(ctr);
@@ -76,7 +78,7 @@ export function Middleware(...middleware: Express.RequestHandler[]): (Function) 
 /** 
  * @param { boolean } condition - Only mounts this controller if condition is true. 
  */
-export function MountCondition(condition: boolean): (Function) => void {
+export function MountCondition(condition: boolean): (f: Function) => void {
     return (ctr: Function) => {
         let c = globalKCState.getOrInsertController(ctr);
         c.mountCondition = c.mountCondition && condition;
@@ -86,7 +88,7 @@ export function MountCondition(condition: boolean): (Function) => void {
 /** 
  *  Only mounts this controller if NODE_ENV is set to "development"
  */
-export function Dev(): (Function) => void {
+export function Dev(): (f: Function) => void {
     return MountCondition(process.env.NODE_ENV === "development");
 }
 
@@ -94,7 +96,7 @@ export function Dev(): (Function) => void {
  *  Attach a documentation string to the controller
  *  @param {string} docStr - The documentation string.
  */
-export function DocController(docStr: string): (Function) => void {
+export function DocController(docStr: string): (f: Function) => void {
     return (ctr: Function) => {
         globalKCState.getOrInsertController(ctr).docString = docStr;
     };
@@ -103,7 +105,7 @@ export function DocController(docStr: string): (Function) => void {
 /**
  * Generate test runner paths inside this controller
  */
-export function TestRunner(): (Function) => void {
+export function TestRunner(): (f: Function) => void {
     return (ctr: Function) => {
         globalKCState.getOrInsertController(ctr).generateTestRunnerPaths = true;
     };
@@ -113,7 +115,7 @@ export function TestRunner(): (Function) => void {
  * Method Decorators  
  *********************************************************/
 
-export function Method(method: string, path?: string): (any, string, PropertyDescriptor) => void {
+export function Method(method: string, path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         path = (path != undefined) ? path : propertyKey;
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
@@ -122,11 +124,11 @@ export function Method(method: string, path?: string): (any, string, PropertyDes
     };
 }
 
-export function Get(path?: string): (any, string, PropertyDescriptor) => void {
+export function Get(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return Method("get", path);
 }
 
-export function Post(path?: string): (any, string, PropertyDescriptor) => void {
+export function Post(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return Method("post", path);
 }
 
@@ -134,7 +136,7 @@ export function Post(path?: string): (any, string, PropertyDescriptor) => void {
  * Adds express middleware to run before the method 
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
  */
-export function ActionMiddleware(...middleware: Express.RequestHandler[]): (any, string, PropertyDescriptor) => void {
+export function ActionMiddleware(...middleware: Express.RequestHandler[]): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         if (middleware != undefined) {
             let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
@@ -146,7 +148,7 @@ export function ActionMiddleware(...middleware: Express.RequestHandler[]): (any,
 /**
  * Flags the method as "Express Compatible" and thus will be called with parameters (req,res,next)
  */
-export function ExpressCompatible(): (any, string, PropertyDescriptor) => void {
+export function ExpressCompatible(): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.expressCompatible = true;
@@ -158,7 +160,7 @@ export function ExpressCompatible(): (any, string, PropertyDescriptor) => void {
  *  Attach a documentation string to the method
  *  @param {string} docStr - The documentation string.
  */
-export function DocAction(docStr: string): (any, string, PropertyDescriptor) => void {
+export function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.docString = docStr;
@@ -306,7 +308,7 @@ export class KwyjiboControllersState {
 
 }
 
-export let globalKCState = new KwyjiboControllersState();
+globalKCState = new KwyjiboControllersState();
 
 function addChildsToTreeNode(node: KwyjiboControllerTreeNode): void {
 
@@ -369,7 +371,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
             let context = new Context();
 
             let runner = async () => {
-                let ret;
+                let ret: any;
 
                 if (method.expressCompatible) {
                     ret = instance[methodKey](req, res, next);
@@ -403,20 +405,26 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
 function useRouterAtPathStrict(baseRouter: Express.Router | Express.Application, basePath: string, router: Express.Router): void {
 
     if (basePath.substring(basePath.length - 1) === "/") {
-        basePath = basePath.substr(0, basePath.length - 1);
+        basePath = basePath.trim().substr(0, basePath.length - 1);
     }
 
     let strictPath = U.UrlJoin(basePath, "/");
 
-    baseRouter.use(strictPath, (req, res, next) => {
+    if (strictPath !== "/") {
 
-        if (req.originalUrl.substring(req.originalUrl.length - basePath.length) === basePath) {
-            res.redirect(strictPath);
-        } else {
-            next();
-        }
+        baseRouter.use(strictPath, (req, res, next) => {
 
-    }, router);
+            if (req.originalUrl.substring(req.originalUrl.length - basePath.length) === basePath) {
+                res.redirect(strictPath);
+            } else {
+                next();
+            }
+
+        }, router);
+
+    } else {
+        baseRouter.use(strictPath, router);
+    }
 
 }
 

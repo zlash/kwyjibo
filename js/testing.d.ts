@@ -1,4 +1,5 @@
 import * as C from "./controller";
+export declare let globalKTState: KwyjiboTestsState;
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -6,7 +7,7 @@ import * as C from "./controller";
  *  Registers a fixture of tests with the global test runner.
  *  @param {string} humanReadableName - The human readable name for the fixture
  */
-export declare function Fixture(humanReadableName?: string): (Function) => void;
+export declare function Fixture(humanReadableName?: string): (f: Function) => void;
 /*********************************************************
  * Method Decorators
  *********************************************************/
@@ -14,15 +15,15 @@ export declare function Fixture(humanReadableName?: string): (Function) => void;
  *  Register a new test. If the test throws it fails, otherwise it passes.
  *  @param {string} humanReadableName - The human readable name for this test.
  */
-export declare function Test(humanReadableName: string): (any, string, PropertyDescriptor) => void;
+export declare function Test(humanReadableName: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  *  Method to run before any of the tests.
  */
-export declare function Before(): (any, string, PropertyDescriptor) => void;
+export declare function Before(): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  *  Method to run after any of the tests.
  */
-export declare function After(): (any, string, PropertyDescriptor) => void;
+export declare function After(): (a: any, s: string, pd: PropertyDescriptor) => void;
 /*********************************************************
  * Tests
  *********************************************************/
@@ -61,5 +62,4 @@ export declare class KwyjiboTestsState {
     generateRainbowTables(): Object;
     run(testsToRun?: Object): Promise<KwyjiboTestResult[]>;
 }
-export declare let globalKTState: KwyjiboTestsState;
 export declare function injectTestRunnerMiddleware(controller: C.KwyjiboController): void;

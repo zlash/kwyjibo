@@ -15,3 +15,4 @@ exports.UrlJoin = UrlJoin;
 exports.defaultError = (str) => { console.error(str); };
 exports.defaultWarn = (str) => { console.warn(str); };
 exports.defaultLog = (str) => { console.log(str); };
+//# sourceMappingURL=utils.js.map

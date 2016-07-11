@@ -1,11 +1,15 @@
 {
     "compilerOptions": {
         "module": "commonjs",
+        "sourceMap": true,
         "target": "es6",
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true, 
+        "emitDecoratorMetadata": true,
         "declaration": true,
-        "outDir": "./js"
+        "outDir": "./js",
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "suppressImplicitAnyIndexErrors": true
     },
     "exclude": [
         "node_modules",

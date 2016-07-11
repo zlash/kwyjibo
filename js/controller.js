@@ -346,17 +346,22 @@ function mountMethod(controller, instance, methodKey) {
 }
 function useRouterAtPathStrict(baseRouter, basePath, router) {
     if (basePath.substring(basePath.length - 1) === "/") {
-        basePath = basePath.substr(0, basePath.length - 1);
+        basePath = basePath.trim().substr(0, basePath.length - 1);
     }
     let strictPath = U.UrlJoin(basePath, "/");
-    baseRouter.use(strictPath, (req, res, next) => {
-        if (req.originalUrl.substring(req.originalUrl.length - basePath.length) === basePath) {
-            res.redirect(strictPath);
-        }
-        else {
-            next();
-        }
-    }, router);
+    if (strictPath !== "/") {
+        baseRouter.use(strictPath, (req, res, next) => {
+            if (req.originalUrl.substring(req.originalUrl.length - basePath.length) === basePath) {
+                res.redirect(strictPath);
+            }
+            else {
+                next();
+            }
+        }, router);
+    }
+    else {
+        baseRouter.use(strictPath, router);
+    }
 }
 function createRouterRecursive(app, controllerNode) {
     let controller = controllerNode.controller;
@@ -402,3 +407,4 @@ function addControllersToExpressApp(app, rootPath) {
     }
 }
 exports.addControllersToExpressApp = addControllersToExpressApp;
+//# sourceMappingURL=controller.js.map

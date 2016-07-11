@@ -16,8 +16,8 @@ export function UrlJoin(...parts: string[]): string {
     return ret;
 }
 
-export let defaultError = (str:string)=>{console.error(str);};
-export let defaultWarn = (str:string)=>{console.warn(str);};
-export let defaultLog = (str:string)=>{console.log(str);};
+export let defaultError = (str: string) => { console.error(str); };
+export let defaultWarn = (str: string) => { console.warn(str); };
+export let defaultLog = (str: string) => { console.log(str); };
 
 
