@@ -459,7 +459,7 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
         let nc = createRouterRecursive(app, child);
         if (nc != undefined) {
             useRouterAtPathStrict(controller.router, nc.path, nc.router);
-            child.fullPath = U.UrlJoin(controllerNode.fullPath,"/",child.fullPath); 
+            child.fullPath = U.UrlJoin(controllerNode.fullPath, "/", child.fullPath);
         }
     }
 
@@ -474,7 +474,19 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     return controller;
 }
 
-export function addControllersToExpressApp(app: Express.Application, rootPath?: string): void {
+export function addControllersToExpressApp(app: Express.Application, ...requiredDirectories: string[]): void {
+    addControllersToExpressAppAtRoute("/", app, ...requiredDirectories);
+}
+
+export function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
+
+    for (let requiredDirectory of requiredDirectories) {
+        require("require-all")({
+            dirname: U.UrlJoin(__dirname, "/", requiredDirectory),
+            excludeDirs: /^\.(git|svn)$/,
+            recursive: true
+        });
+    }
 
     rootPath = rootPath || "/";
 
@@ -484,6 +496,7 @@ export function addControllersToExpressApp(app: Express.Application, rootPath?: 
         let nc = createRouterRecursive(app, node);
         if (nc != undefined) {
             useRouterAtPathStrict(app, U.UrlJoin(rootPath, nc.path), nc.router);
+            node.fullPath = U.UrlJoin(rootPath, "/", node.fullPath);
         }
     }
 

@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/zlash/kwyjibo#readme",
   "dependencies": {
-    "express": "^4.14.0"
+    "express": "^4.14.0",
+    "require-all": "^2.0.0"
   }
 }

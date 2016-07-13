@@ -148,4 +148,5 @@ export declare class KwyjiboControllersState {
     getOrInsertController(ctr: Function): KwyjiboController;
     registerMountPoint(dstCtr: any, ctr: Function): void;
 }
-export declare function addControllersToExpressApp(app: Express.Application, rootPath?: string): void;
+export declare function addControllersToExpressApp(app: Express.Application, ...requiredDirectories: string[]): void;
+export declare function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void;

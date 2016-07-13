@@ -396,18 +396,30 @@ function createRouterRecursive(app, controllerNode) {
     }
     return controller;
 }
-function addControllersToExpressApp(app, rootPath) {
+function addControllersToExpressApp(app, ...requiredDirectories) {
+    addControllersToExpressAppAtRoute("/", app, ...requiredDirectories);
+}
+exports.addControllersToExpressApp = addControllersToExpressApp;
+function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories) {
+    for (let requiredDirectory of requiredDirectories) {
+        require("require-all")({
+            dirname: U.UrlJoin(__dirname, "/", requiredDirectory),
+            excludeDirs: /^\.(git|svn)$/,
+            recursive: true
+        });
+    }
     rootPath = rootPath || "/";
     buildControllersTree();
     for (let node of exports.globalKCState.controllersTree) {
         let nc = createRouterRecursive(app, node);
         if (nc != undefined) {
             useRouterAtPathStrict(app, U.UrlJoin(rootPath, nc.path), nc.router);
+            node.fullPath = U.UrlJoin(rootPath, "/", node.fullPath);
         }
     }
     if (process.env.NODE_ENV === "development") {
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
 }
-exports.addControllersToExpressApp = addControllersToExpressApp;
+exports.addControllersToExpressAppAtRoute = addControllersToExpressAppAtRoute;
 //# sourceMappingURL=controller.js.map

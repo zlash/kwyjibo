@@ -42,6 +42,14 @@ exports.getDocs = getDocs;
 function crlfToBr(str) {
     return str.replace(/\n|\r/g, "<br />");
 }
+function getControllerId(cdns, cdn) {
+    for (let idx in cdns) {
+        if (cdns[idx] == cdn) {
+            return "ci_" + idx;
+        }
+    }
+    return "";
+}
 const defaultCSS = `
 
     /**
@@ -92,8 +100,6 @@ const defaultCSS = `
     border-spacing: 0;
     }
 
-
-
     .wrapper{
         width: 100%;
         min-width: 1000px;
@@ -101,19 +107,96 @@ const defaultCSS = `
         margin: 0 auto;
     }
     .left{
-        float: left;
-        background: #CC33FF;
-        width: 200px;
-        margin-left: -100%;
-        border-radius: 25px;
+        background: #91AA9D;
+        width: 250px;
+        padding:8px;
+        position:fixed;
+        top: 0;
+        left:0;
     }
+
+    .left h1{
+        font-weight: bold;
+        font-size: 20px;
+        text-decoration: underline;
+        margin-bottom:5px;
+    }
+
     .rightFluid{
         float: left;
         width: 100%;
     }
     .right{
         background: #FFFFFF;
-        margin-left: 200px;
+        margin-left: 270px;
+    }
+    .controller{
+        background: #91AA9D;
+        border-radius: 25px;
+        margin-top:3px;
+        margin-bottom:3px;
+        padding: 10px;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+
+    .controller h1{
+        font-weight: bold;
+        font-size: 24px;
+        text-decoration: underline;
+        margin-bottom:5px;
+    }
+
+    .controller h2{
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom:5px;
+    }
+
+    .controller h3{
+        font-size: 16px;
+        margin-bottom:5px;
+    }
+
+    .controller a{
+        text-decoration: underline;
+    }
+
+    .method {
+        background: #AFB2B2;
+        border-radius: 25px;
+        margin-top:3px;
+        margin-bottom:3px;
+        padding: 10px;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+
+    .method h1{
+        font-weight: bold;
+        font-size: 20px;
+        text-decoration: underline;
+        margin-bottom:8px;
+    }
+
+    .method h2{
+        font-weight: bold;
+        font-size: 15px;
+        margin-bottom:10px;
+    }
+
+    .method p{
+        background: #DDDDDD;
+    }
+
+    a {
+        text-decoration: none;
+        color:0;
+    }
+
+    ul {
+        font-size: 18px;
+        list-style-type: square;
     }
 
     p {
@@ -140,33 +223,33 @@ function getDocsAsHTML() {
     let cdns = getDocs();
     content += `<div class="rightFluid"><div class="right">`;
     for (let cdn of cdns) {
-        content += `<div>
+        content += `<div id="${getControllerId(cdns, cdn)}" class="controller">
                     <div>
-                        <h2>${cdn.name}</h2>
-                        <h3>Path: ${cdn.path}</h3>
+                        <h1>${cdn.name}</h1>
+                        <h2>Path: ${cdn.path}</h2>
                   `;
         if (cdn.parent != undefined) {
             content += `<div>
-                      <h4>Parent: ${cdn.parent.name}</h4>
+                      <h3>Parent: <a href="#${getControllerId(cdns, cdn.parent)}">${cdn.parent.name}</a></h3>
                       </div>`;
         }
         if (cdn.childs.length > 0) {
-            content += `<div><h4>Childs: `;
+            content += `<div><h3>Childs: `;
             let childLinks = [];
             for (let child of cdn.childs) {
-                childLinks.push(`${child.name}`);
+                childLinks.push(`<a href="#${getControllerId(cdns, child)}">${child.name}</a>`);
             }
-            content += `${childLinks.join(", ")}</h4></div>`;
+            content += `${childLinks.join(", ")}</h3></div>`;
         }
         content += `<p>${crlfToBr(cdn.docString)}</p>
                     </div>                    
                     `;
         if (cdn.methods.length > 0) {
-            content += `<div><h2>Methods</h2> `;
+            content += `<div>`;
             for (let method of cdn.methods) {
-                content += `<div><h3>${method.name}</h3>`;
+                content += `<div class="method"><h1>${method.name}</h1>`;
                 for (let mp of method.mountpoints) {
-                    content += `<h4> ${mp.httpMethod.toUpperCase()} : ${U.UrlJoin(cdn.path, "/", mp.path)} </h4>`;
+                    content += `<h2> ${mp.httpMethod.toUpperCase()} : ${U.UrlJoin(cdn.path, "/", mp.path)} </h2>`;
                 }
                 content += `<p>${crlfToBr(method.docString)}</p></div>`;
             }
@@ -176,8 +259,12 @@ function getDocsAsHTML() {
     }
     content += `</div></div>`;
     // Sidebar
-    content += `<div class="left"> Controllers </div>`;
-    content += `</div></body></html>`;
+    content += `<div class="left"><ul>`;
+    for (let cdn of cdns) {
+        content += `<li><a href="#${getControllerId(cdns, cdn)}">${cdn.name}</a></li>`;
+    }
+    content += `</div>`;
+    content += `<ul></div></body></html>`;
     return content;
 }
 exports.getDocsAsHTML = getDocsAsHTML;
