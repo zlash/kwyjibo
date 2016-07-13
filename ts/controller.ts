@@ -481,11 +481,11 @@ export function addControllersToExpressApp(app: Express.Application, ...required
 export function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
 
     for (let requiredDirectory of requiredDirectories) {
-        require("require-all")({
-            dirname: U.UrlJoin(__dirname, "/", requiredDirectory),
-            excludeDirs: /^\.(git|svn)$/,
-            recursive: true
-        });
+        if (requiredDirectory.charAt(0) == "/") {
+            require('require-all')(requiredDirectory);
+        } else {
+            require('require-all')(U.UrlJoin(process.cwd(), "/", requiredDirectory));
+        }
     }
 
     rootPath = rootPath || "/";
