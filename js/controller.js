@@ -244,6 +244,7 @@ class KwyjiboControllerTreeNode {
     constructor(controller) {
         this.childs = [];
         this.controller = controller;
+        this.fullPath = controller.path;
     }
 }
 exports.KwyjiboControllerTreeNode = KwyjiboControllerTreeNode;
@@ -365,6 +366,7 @@ function useRouterAtPathStrict(baseRouter, basePath, router) {
 }
 function createRouterRecursive(app, controllerNode) {
     let controller = controllerNode.controller;
+    controllerNode.fullPath = controller.path;
     if (controller.mountCondition === false) {
         return undefined;
     }
@@ -383,6 +385,7 @@ function createRouterRecursive(app, controllerNode) {
         let nc = createRouterRecursive(app, child);
         if (nc != undefined) {
             useRouterAtPathStrict(controller.router, nc.path, nc.router);
+            child.fullPath = U.UrlJoin(controllerNode.fullPath, "/", child.fullPath);
         }
     }
     if (controller.generateTestRunnerPaths) {

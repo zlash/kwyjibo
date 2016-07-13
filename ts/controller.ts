@@ -273,8 +273,10 @@ export class KwyjiboController {
 export class KwyjiboControllerTreeNode {
     controller: KwyjiboController;
     childs: KwyjiboControllerTreeNode[] = [];
+    fullPath: string;
     constructor(controller: KwyjiboController) {
         this.controller = controller;
+        this.fullPath = controller.path;
     }
 }
 
@@ -412,7 +414,7 @@ function useRouterAtPathStrict(baseRouter: Express.Router | Express.Application,
 
     if (strictPath !== "/") {
 
-        baseRouter.use(strictPath, (req, res, next) => {
+        baseRouter.use(strictPath, (req: any, res: any, next: any) => {
 
             if (req.originalUrl.substring(req.originalUrl.length - basePath.length) === basePath) {
                 res.redirect(strictPath);
@@ -431,6 +433,8 @@ function useRouterAtPathStrict(baseRouter: Express.Router | Express.Application,
 function createRouterRecursive(app: Express.Application, controllerNode: KwyjiboControllerTreeNode): KwyjiboController {
 
     let controller = controllerNode.controller;
+
+    controllerNode.fullPath = controller.path;
 
     if (controller.mountCondition === false) {
         return undefined;
@@ -455,6 +459,7 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
         let nc = createRouterRecursive(app, child);
         if (nc != undefined) {
             useRouterAtPathStrict(controller.router, nc.path, nc.router);
+            child.fullPath = U.UrlJoin(controllerNode.fullPath,"/",child.fullPath); 
         }
     }
 

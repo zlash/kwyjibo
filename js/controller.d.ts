@@ -130,6 +130,7 @@ export declare class KwyjiboController {
 export declare class KwyjiboControllerTreeNode {
     controller: KwyjiboController;
     childs: KwyjiboControllerTreeNode[];
+    fullPath: string;
     constructor(controller: KwyjiboController);
 }
 export declare type KwyjiboControllerMap = {

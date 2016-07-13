@@ -5,4 +5,5 @@ function __export(m) {
 __export(require("./controller"));
 __export(require("./testing"));
 __export(require("./utils"));
+__export(require("./documentation"));
 //# sourceMappingURL=index.js.map
