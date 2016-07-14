@@ -359,7 +359,7 @@ function mountMethod(controller, instance, methodKey) {
                             }
                         }
                     }
-                    ret = instance[methodKey](context);
+                    ret = instance[methodKey](...params);
                 }
                 if (ret instanceof Promise) {
                     ret = yield ret;
@@ -448,7 +448,7 @@ function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories
             U.defaultWarn("Cannot access path: " + path);
             continue;
         }
-        require('require-all')(path);
+        require("require-all")(path);
     }
     rootPath = rootPath || "/";
     buildControllersTree();

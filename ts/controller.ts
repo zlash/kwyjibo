@@ -419,7 +419,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                         }
                     }
 
-                    ret = instance[methodKey](context);
+                    ret = instance[methodKey](...params);
                 }
 
                 if (ret instanceof Promise) {
@@ -535,7 +535,7 @@ export function addControllersToExpressAppAtRoute(rootPath: string, app: Express
             continue;
         }
 
-        require('require-all')(path);
+        require("require-all")(path);
 
     }
 
