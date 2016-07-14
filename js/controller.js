@@ -327,6 +327,35 @@ function mountMethod(controller, instance, methodKey) {
                     context.request = req;
                     context.response = res;
                     context.nextMiddleware = next;
+                    let params = [context];
+                    if (method.extraParametersMappings[0] != undefined) {
+                        throw new Error("Cannot map first parameter, it always will contain Context!");
+                    }
+                    for (let i = 1; i < method.extraParametersMappings.length; i++) {
+                        let mp = method.extraParametersMappings[i];
+                        if (mp == undefined) {
+                            params.push(undefined);
+                        }
+                        else {
+                            switch (mp.rvc) {
+                                case "body":
+                                    params.push(req.body[mp.valueKey]);
+                                    break;
+                                case "query":
+                                    params.push(req.query[mp.valueKey]);
+                                    break;
+                                case "path":
+                                    params.push(req.params[mp.valueKey]);
+                                    break;
+                                case "header":
+                                    params.push(req.headers[mp.valueKey]);
+                                    break;
+                                case "cookie":
+                                    params.push(req.cookies[mp.valueKey]);
+                                    break;
+                            }
+                        }
+                    }
                     ret = instance[methodKey](context);
                 }
                 if (ret instanceof Promise) {
