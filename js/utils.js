@@ -12,7 +12,7 @@ function UrlJoin(...parts) {
     return ret;
 }
 exports.UrlJoin = UrlJoin;
-exports.defaultError = (str) => { console.error(str); };
-exports.defaultWarn = (str) => { console.warn(str); };
-exports.defaultLog = (str) => { console.log(str); };
+exports.defaultError = (toLog) => { console.error(toLog.toString()); };
+exports.defaultWarn = (toLog) => { console.warn(toLog.toString()); };
+exports.defaultLog = (toLog) => { console.log(toLog.toString()); };
 //# sourceMappingURL=utils.js.map
