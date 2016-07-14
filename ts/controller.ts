@@ -1,6 +1,7 @@
 import * as Express from "express";
 import * as U from "./utils";
 import * as T from "./testing";
+import * as FS from "fs";
 
 export interface IDisposable {
     dispose(): void;
@@ -250,6 +251,8 @@ export class KwyjiboController {
     generateTestRunnerPaths: boolean = false;
     childController: boolean = false;
 
+    node: KwyjiboControllerTreeNode = undefined;
+
     /**
      * Set to true by the Controller decorator to assert that 
      * it was explicitly declared.
@@ -313,6 +316,8 @@ export class KwyjiboControllersState {
 globalKCState = new KwyjiboControllersState();
 
 function addChildsToTreeNode(node: KwyjiboControllerTreeNode): void {
+
+    node.controller.node = node;
 
     for (let mp of globalKCState.mountpoints) {
         if (node.controller.ctr.toString() === mp.dstCtr.toString()) {
@@ -514,11 +519,24 @@ export function addControllersToExpressApp(app: Express.Application, ...required
 export function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
 
     for (let requiredDirectory of requiredDirectories) {
-        require("require-all")({
-            dirname: U.UrlJoin(__dirname, "/", requiredDirectory),
-            excludeDirs: /^\.(git|svn)$/,
-            recursive: true
-        });
+
+        let path = "";
+
+        if (requiredDirectory.charAt(0) == "/") {
+            path = requiredDirectory;
+        } else {
+            path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
+        }
+
+        try {
+            FS.accessSync(path);
+        } catch (err) {
+            U.defaultWarn("Cannot access path: " + path);
+            continue;
+        }
+
+        require('require-all')(path);
+
     }
 
     rootPath = rootPath || "/";
@@ -537,6 +555,27 @@ export function addControllersToExpressAppAtRoute(rootPath: string, app: Express
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
+}
 
+
+export function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string) {
+
+    let kc = globalKCState.getOrInsertController(controller);
+
+    if (kc.methods[methodName] != undefined) {
+        let method = kc.methods[methodName];
+
+        if (httpMethod == undefined && method.methodMountpoints.length > 0) {
+            return U.UrlJoin(kc.node.fullPath, "/", method.methodMountpoints[0].path);
+        }
+
+        for (let mp of method.methodMountpoints) {
+            if (mp.httpMethod.toLowerCase() === httpMethod.toLowerCase()) {
+                return U.UrlJoin(kc.node.fullPath, "/", mp.path);
+            }
+        }
+    }
+
+    return "";
 }
 

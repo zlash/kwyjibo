@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 const Express = require("express");
 const U = require("./utils");
 const T = require("./testing");
+const FS = require("fs");
 /**
  * Contains context for the current call .
  */
@@ -222,6 +223,7 @@ class KwyjiboController {
         this.docString = "";
         this.generateTestRunnerPaths = false;
         this.childController = false;
+        this.node = undefined;
         /**
          * Set to true by the Controller decorator to assert that
          * it was explicitly declared.
@@ -273,6 +275,7 @@ class KwyjiboControllersState {
 exports.KwyjiboControllersState = KwyjiboControllersState;
 exports.globalKCState = new KwyjiboControllersState();
 function addChildsToTreeNode(node) {
+    node.controller.node = node;
     for (let mp of exports.globalKCState.mountpoints) {
         if (node.controller.ctr.toString() === mp.dstCtr.toString()) {
             let child = new KwyjiboControllerTreeNode(exports.globalKCState.getController(mp.ctr));
@@ -431,11 +434,21 @@ function addControllersToExpressApp(app, ...requiredDirectories) {
 exports.addControllersToExpressApp = addControllersToExpressApp;
 function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories) {
     for (let requiredDirectory of requiredDirectories) {
-        require("require-all")({
-            dirname: U.UrlJoin(__dirname, "/", requiredDirectory),
-            excludeDirs: /^\.(git|svn)$/,
-            recursive: true
-        });
+        let path = "";
+        if (requiredDirectory.charAt(0) == "/") {
+            path = requiredDirectory;
+        }
+        else {
+            path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
+        }
+        try {
+            FS.accessSync(path);
+        }
+        catch (err) {
+            U.defaultWarn("Cannot access path: " + path);
+            continue;
+        }
+        require('require-all')(path);
     }
     rootPath = rootPath || "/";
     buildControllersTree();
@@ -451,4 +464,20 @@ function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories
     }
 }
 exports.addControllersToExpressAppAtRoute = addControllersToExpressAppAtRoute;
+function getActionRoute(controller, methodName, httpMethod) {
+    let kc = exports.globalKCState.getOrInsertController(controller);
+    if (kc.methods[methodName] != undefined) {
+        let method = kc.methods[methodName];
+        if (httpMethod == undefined && method.methodMountpoints.length > 0) {
+            return U.UrlJoin(kc.node.fullPath, "/", method.methodMountpoints[0].path);
+        }
+        for (let mp of method.methodMountpoints) {
+            if (mp.httpMethod.toLowerCase() === httpMethod.toLowerCase()) {
+                return U.UrlJoin(kc.node.fullPath, "/", mp.path);
+            }
+        }
+    }
+    return "";
+}
+exports.getActionRoute = getActionRoute;
 //# sourceMappingURL=controller.js.map

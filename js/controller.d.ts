@@ -116,6 +116,7 @@ export declare class KwyjiboController {
     router: Express.Router;
     generateTestRunnerPaths: boolean;
     childController: boolean;
+    node: KwyjiboControllerTreeNode;
     /**
      * Set to true by the Controller decorator to assert that
      * it was explicitly declared.
@@ -150,3 +151,4 @@ export declare class KwyjiboControllersState {
 }
 export declare function addControllersToExpressApp(app: Express.Application, ...requiredDirectories: string[]): void;
 export declare function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void;
+export declare function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string): string;
