@@ -527,14 +527,15 @@ export function addControllersToExpressAppAtRoute(rootPath: string, app: Express
 
 export function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string) {
 
-    if (httpMethod == undefined) {
-        httpMethod = "get";
-    }
-
     let kc = globalKCState.getOrInsertController(controller);
 
     if (kc.methods[methodName] != undefined) {
         let method = kc.methods[methodName];
+
+        if (httpMethod == undefined && method.methodMountpoints.length > 0) {
+            return U.UrlJoin(kc.node.fullPath, "/", method.methodMountpoints[0].path);
+        }
+
         for (let mp of method.methodMountpoints) {
             if (mp.httpMethod.toLowerCase() === httpMethod.toLowerCase()) {
                 return U.UrlJoin(kc.node.fullPath, "/", mp.path);

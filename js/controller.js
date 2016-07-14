@@ -436,12 +436,12 @@ function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories
 }
 exports.addControllersToExpressAppAtRoute = addControllersToExpressAppAtRoute;
 function getActionRoute(controller, methodName, httpMethod) {
-    if (httpMethod == undefined) {
-        httpMethod = "get";
-    }
     let kc = exports.globalKCState.getOrInsertController(controller);
     if (kc.methods[methodName] != undefined) {
         let method = kc.methods[methodName];
+        if (httpMethod == undefined && method.methodMountpoints.length > 0) {
+            return U.UrlJoin(kc.node.fullPath, "/", method.methodMountpoints[0].path);
+        }
         for (let mp of method.methodMountpoints) {
             if (mp.httpMethod.toLowerCase() === httpMethod.toLowerCase()) {
                 return U.UrlJoin(kc.node.fullPath, "/", mp.path);
