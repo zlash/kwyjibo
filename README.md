@@ -1,6 +1,13 @@
 #Kwyjibo
 A set of Typescript Decorators and helpers for a better node.js+Express experience.
 
+###Key features
+- Express integration
+- Controllers / Actions
+- Dev endpoints
+- Tests execution and automation
+- API Documentation
+
 ###Quickstart
 1. Install [Visual Studio Code](https://code.visualstudio.com/Download)
 2. Install `yeoman` with the  `generator-kwyjibo` package, and the required dependencies for every-day development (`typescript`, `tsd`, and `package-to-tsd`)
