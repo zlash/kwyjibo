@@ -5,10 +5,11 @@ A set of TypeScript Decorators and helpers for a better node.js+Express experien
 - [Requirements](#requirements)
 - [Express integration](#express-integration)
 - [Controllers and Actions](#controllers-and-actions)
-- [Dev Endpoints](#dev-endpoints)
+- [Dev Environment](#dev-environment)
+- [Custom mount conditions](#custom-mount-conditions)
 - [Tests execution and automation](#tests-execution-and-automation)
-- [API Documentation](#api-documentation)
-- [Passport integration](#passport-integration)
+- [Routes Documentation](#routes-documentation)
+- [Kwyjibo API Documentation](#kwyjibo-api-documentation)
 
 ###Quickstart
 1. Install [Visual Studio Code](https://code.visualstudio.com/Download)
@@ -58,9 +59,9 @@ And right after creating the Http server, add the following lines (assuming `exp
 
 ```
 // Set Kwyjibo loggers
-Kwyjibo.defaultError = (toLog: any) => { console.write(toLog); };
-Kwyjibo.defaultWarn = (toLog: any) => { console.write(toLog); };
-Kwyjibo.defaultLog = (toLog: any) => { console.write(toLog); };
+Kwyjibo.defaultError = (toLog: any) => { console.log(toLog); };
+Kwyjibo.defaultWarn = (toLog: any) => { console.log(toLog); };
+Kwyjibo.defaultLog = (toLog: any) => { console.log(toLog); };
 
 // Init all Kwyjibo controllers and tests (assuming "tests" and "controllers" folders)
 Kwyjibo.addControllersToExpressApp(App.express, "tests", "controllers");
@@ -70,6 +71,16 @@ This will configure the framework loggers, and load all the tests and controller
 ###Controllers and Actions
 The main components in a Kwyjibo app are the controllers and their actions.
 Each controller is a mount point for a set of actions, and each action can handle a request to a specific path and HTTP method.
+
+The controllers must be decorated with the `@Controller` decorator, specifying the mount point:
+- `@Controller("/myMountPoint")` will mount the controller in `/myMountPoint`.
+- `@Controller(AnotherController, "/myMountPoint")` will mount the controller in the specified mount point, but using `AnotherController` as its root (for instance, this could be ended up being mounted as `/someMountPoint/myMountPoint`.
+
+You can - optionally - add the `@DocController` decorator to add documentation and the `@Middleware` decorator to apply middlewares to all the controller actions
+
+Each action is a method in the controller with either, a `@Get`, `@Post` or `@Method` decorator to specify its route and HTTP method, or at least one of the `@DocAction` or `@ActionMiddleware` decorators, and it will use the default mount point (the method name, using the `GET` HTTP method)
+
+The `@DocAction` the same way `@DocController` does, but for actions, and the `@ActionMiddleware` to apply middlewares to particular actions. 
 
 By default, the action methods receive at least a `context: Kwyjibo.Context` parameter that allows it to access the request and response objects and can return:
 
@@ -83,33 +94,138 @@ By default, the action methods receive at least a `context: Kwyjibo.Context` par
  - `Object`
  - `Promise<Object>`
 
-In any of those cases, if an exception is thrown (or the promise is rejected), the exception will be handled by the error handler middlewares configured in Express
+In any of those cases, if an exception is thrown (or the promise is rejected), the exception will be handled by the error handler middlewares configured in Express.
+
+To use request parameters from the body, route path, querystring, headers or cookies, you can decorate any action parameter but the first (that must be the context) with the following decorators:
+
+- `@FromBody("paramName")`
+- `@FromPath("paramName")`
+- `@FromQuery("paramName")`
+- `@FromHeader("paramName")`
+- `@FromCookie("paramName")`
+
+For instance, to create a controller for users operations:
+- Create a `controllers` folder in your app root and create a `usersController.ts` file inside.
+- Add the following code:
+```
+import * as K from "kwyjibo";
+
+@K.Controller("/users")
+@K.DocController("Users Controller.")
+@K.Middleware(UsersController.loggingMiddleware)
+class UsersController {
+
+	static loggingMiddleware(req: Express.Request, res: Express.Response, next: Function) {
+		console.log("Request to: " + req.path);
+	}
+
+    @K.Get("/")
+    @K.DocAction(`Users index`)
+    index(context: K.Context): String {
+        return "<html><body><ul><li>/list: all users</li><li>/user/:id: specifi user</li></ul></body></html>";
+    }
+
+    @K.Get("/list")
+    @K.DocAction(`Return all users`)
+    allUsers(context: Context): Object {
+        let users = UsersRepository.getAllUsers();
+        return users; // this action will send a json object
+    }
+
+    @Get("/user/:id")
+    @DocAction(`Return a specific user`)
+    oneUser(context: Context, @FromPath("id") id: String): String {
+        let user = UsersRepository.getUser(id);
+        return user;
+    }
+}
+```
+
+If you want to use the standard Express route method signature, instead of just receiving the `context` object (useful to migrate classic Express apps to Kwyjibo), you can use the `@ExpressCompatible` decorator and create methods like this:
+```
+@Get("/somewhere)
+@ExpressCompatible()
+myExpressCompatibleAction(req: Express.Request, res: Express.Response, next: Function) {
+	// do something
+}
+```
 
 
-###Dev endpoints
-Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
-Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
+###Custom mount conditions
+If you want to mount controllers conditionally, you can use the `@MountCondition` decorator.
+
+
+###Dev environment
+When the node app is started with the environment variable `NODE_ENV = development`, every controller that doesn't have it's root endpoint mapped to an action will autogenerate an index with links to every action available at that endpoint.
+
+Also, if you have controllers that should only be exposed in development environment, you can use the `@Dev` controller decorator (a special case of a custom mount condition) and it will only be mounted if that condition is met.
 
 
 ###Tests execution and automation
+The Kwyjibo framework includes the autogeneration of endpoints for integration tests execution, in both interactive and automatic scenarios.
+
+To add tests to you app, create a `sampleTests.ts` file inside the `tests` folder under the app root. The test fixture class must be decorated with `@Fixture` and each test is a method inside it that has the `@Test` decorator.
+
+To do the test preparation and cleanup, you can write methods inside the fixture with the `@Before` and `@After` decorators.
+
+Each test method can have either `void` or `Promise<void>`as its return type.
+
+If the test finishes its execution successfully, will be considered as passed. To make a test fail, it must throw an exeption, or reject the returned promise.
+
+Then, you have to add the `@TestRunner` decorator to a controller. It will scan for all the available test fixtures in the app and generate the endpoints to execute them.
+
+A Test fixture example:
+
+```
+import * as K from "kwyjibo"
+
+@K.Fixture()
+export default class Fixture {
+    @K.Before()
+    prepare(): void {
+        // this method will run before the tests
+    }
+
+    @K.Test("A test that passes")
+    test1(): void {
+        // this test will pass
+    }
+
+    @K.Test("A test that fails")
+    test2(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+	        reject(new Error('failed test!'));
+        });
+    }
+
+    @K.After()
+    cleanUp(): void {
+        // this method will run after the tests
+    }
+}
+```
+
+And a controller with the autogenerated test endpoints:
+
+```
+import * as K from "kwyjibo";
+
+@K.TestRunner()
+@K.Controller("/test")
+export default class Test {
+}
+```
+
+The interactive test runner will explain how to invoke the same set of tests programatically. 
+
+###Routes Documentation
 Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
 Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
 
-###API Documentation
-Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
-Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
-
-###Passport integration
+###Kwyjibo API Documentation
 m Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
 
 
-#DOC-TODO:
-
-	- Async support in actions and tests
-	- @FromXXX in action parameters
-	- Mount container in another container
-	- Middleware for actions and controllers 
-	- Passport integration
 
 
 
