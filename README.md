@@ -8,8 +8,7 @@ A set of TypeScript Decorators and helpers for a better node.js+Express experien
 - [Dev Environment](#dev-environment)
 - [Custom mount conditions](#custom-mount-conditions)
 - [Tests execution and automation](#tests-execution-and-automation)
-- [Routes Documentation](#routes-documentation)
-- [Kwyjibo API Documentation](#kwyjibo-api-documentation)
+- [Documentation generator](#documentation-generator)
 
 ###Quickstart
 1. Install [Visual Studio Code](https://code.visualstudio.com/Download)
@@ -59,8 +58,8 @@ And right after creating the Http server, add the following lines (assuming `exp
 
 ```
 // Set Kwyjibo loggers
-Kwyjibo.defaultError = (toLog: any) => { console.log(toLog); };
-Kwyjibo.defaultWarn = (toLog: any) => { console.log(toLog); };
+Kwyjibo.defaultError = (toLog: any) => { console.error(toLog); };
+Kwyjibo.defaultWarn = (toLog: any) => { console.warn(toLog); };
 Kwyjibo.defaultLog = (toLog: any) => { console.log(toLog); };
 
 // Init all Kwyjibo controllers and tests (assuming "tests" and "controllers" folders)
@@ -218,14 +217,9 @@ export default class Test {
 
 The interactive test runner will explain how to invoke the same set of tests programatically. 
 
-###Routes Documentation
-Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
-Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
+###Documentation generator
+Kwyjibo reads all the `@DocController` and `@DocAction` decorators and uses that information to automatically generate documentation for your web app or API
 
-###Kwyjibo API Documentation
-m Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum Lorem impsum 
-
-
-
-
-
+There are two functions available to access obtain the generated documentation:
+- `Kwyjibo.getDocs()`: returns a `ControllerDocNode[]` representing all the controllers documentation with their actions.
+- `Kwyjibo.getDocsAsHTML()`: returns a string with the controllers documentation as HTML
