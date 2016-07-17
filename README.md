@@ -67,7 +67,7 @@ The easiest way to use Kwyjibo is using the Yeoman generator, as it is explained
 
 Once you have an Express app up and running (and using TypeScript), go to a terminal and run `npm install --save kwyjibo` to add it as a dependency to you app. Then, open the app entrypoint (let's say, `app.ts`) and add the following line at the beginning:
 
-`import * as Kwyjibo from 'kwyjibo`
+`import * as Kwyjibo from 'kwyjibo'`
 
 And right after creating the Http server, add the following lines (assuming `expressApp` is an object containing the Express app):
 
