@@ -14,10 +14,10 @@ A set of TypeScript Decorators and helpers for a better node.js+Express experien
 ##Quickstart
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/Download)
-2. Install `yeoman` with the  `generator-kwyjibo` package, and the required dependencies for every-day development (`typescript`, `tsd`, and `package-to-tsd`)
+2. Install `yo` with the  `generator-kwyjibo` package, and the required dependencies for every-day development (`typescript`, `tsd`, and `package-to-tsd`)
 
 	```
-	npm install --global yeoman generator-kwyjibo typescript tsd package-to-tsd
+	npm install --global yo generator-kwyjibo typescript tsd package-to-tsd
 	```
 
 3. Use the `generator-kwyjibo` to scaffold a new web app. When asked, give a name to the app and answer `Yes` to every generator option
