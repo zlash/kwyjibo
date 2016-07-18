@@ -20,7 +20,7 @@ A set of TypeScript Decorators and helpers for a better node.js+Express experien
 	npm install --global yo generator-kwyjibo typescript tsd package-to-tsd
 	```
 
-3. Use the `generator-kwyjibo` to scaffold a new web app. When asked, give a name to the app and answer `Yes` to every generator option
+3. Use the `generator-kwyjibo` to scaffold a new web app in the current directory. When asked, give a name to the app and answer `Yes` to every generator option
 
 	```
 	yo kwyjibo
