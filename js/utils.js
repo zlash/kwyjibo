@@ -15,4 +15,16 @@ exports.UrlJoin = UrlJoin;
 exports.defaultError = (toLog) => { console.error(toLog.toString()); };
 exports.defaultWarn = (toLog) => { console.warn(toLog.toString()); };
 exports.defaultLog = (toLog) => { console.log(toLog.toString()); };
+function setDefaultErrorHandler(handler) {
+    exports.defaultError = handler;
+}
+exports.setDefaultErrorHandler = setDefaultErrorHandler;
+function setDefaultWarnHandler(handler) {
+    exports.defaultWarn = handler;
+}
+exports.setDefaultWarnHandler = setDefaultWarnHandler;
+function setDefaultLogHandler(handler) {
+    exports.defaultLog = handler;
+}
+exports.setDefaultLogHandler = setDefaultLogHandler;
 //# sourceMappingURL=utils.js.map

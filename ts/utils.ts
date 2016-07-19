@@ -20,4 +20,13 @@ export let defaultError = (toLog: any) => { console.error(toLog.toString()); };
 export let defaultWarn = (toLog: any) => { console.warn(toLog.toString()); };
 export let defaultLog = (toLog: any) => { console.log(toLog.toString()); };
 
+export function setDefaultErrorHandler(handler: (toLog: any) => void): void {
+    defaultError = handler;
+}
 
+export function setDefaultWarnHandler(handler: (toLog: any) => void): void {
+    defaultWarn = handler;
+}
+export function setDefaultLogHandler(handler: (toLog: any) => void): void {
+    defaultLog = handler;
+}

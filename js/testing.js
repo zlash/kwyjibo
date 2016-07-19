@@ -124,7 +124,7 @@ class KwyjiboTestsState {
         return rt;
     }
     run(testsToRun) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             if (testsToRun == undefined) {
                 testsToRun = this.generateCompleteFixtureMetadata();
             }
@@ -355,7 +355,7 @@ function generateInteractiveTestRunnerMiddleware(useFixture) {
     };
 }
 function runSetOfTestsAndFillResponse(testsToRun, res) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         let results = yield exports.globalKTState.run(testsToRun);
         let failed = false;
         for (let result of results) {
