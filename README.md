@@ -14,38 +14,28 @@ A set of TypeScript Decorators and helpers for a better node.js+Express experien
 ##Quickstart
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/Download)
-2. Install `yeoman` with the  `generator-kwyjibo` package, and the required dependencies for every-day development (`TypeScript`, `tsd`, and `package-to-tsd`)
+2. Install `yo` with the  `generator-kwyjibo` package, and the required dependencies for every-day development (`typescript`)
 
 	```
-	npm install --global yeoman generator-kwyjibo TypeScript tsd package-to-tsd
+	npm install --global yo generator-kwyjibo typescript@beta
 	```
 
-3. Use the `generator-kwyjibo` to scaffold a new web app. When asked, give a name to the app and answer `Yes` to every generator option
+3. Use the `generator-kwyjibo` to scaffold a new web app in the current directory. When asked, give a name to the app and answer `Yes` to every generator option
 
 	```
 	yo kwyjibo
 	```
 
-4. Get all the TypeScript definitions for the project
-
-	```
-	package-to-tsd
-	```
-
-5. Start Visual Studio Code
+4. Start Visual Studio Code
 	```
 	code .
 	```
 
-6. Press `F1`, type `>Run Build Task`, select `Configure Task Runner` and then choose `TypeScript - Watch Mode` to create the `task.json` file. 
-	- Press `F1`, and type `>Run Build Task` again to run it
+5. Press `F1` and type `>Run Build Task` to build the app
 
-7. Press `F5` and choose `Node.js` to create a `launch.json`
-	- Change the `sourceMaps` key to `true`
+6. Press `F5`  to start the Kwyjibo app in `http://localhost:3000`
 
-8. Press `F5` again to start the Kwyjibo app in `http://localhost:3000`
-
-9. You did it! Your Kwyjibo app is up and running!
+7. You did it! Your Kwyjibo app is up and running!
 
 
 ##Requirements
@@ -54,7 +44,7 @@ To use the Kwyjibo framework with a Node.js+Express web app, the minimum require
 
 - Node.js 6.x
 - Express 4.14.0
-- TypeScript 1.8.10, with:
+- TypeScript 2.0.0 (beta), with:
 	- `experimentalDecorators` support 
 	- ECMAScript 6 target 
 
