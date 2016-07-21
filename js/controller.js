@@ -1,3 +1,28 @@
+/*********************************************************************************
+
+MIT License
+
+Copyright (c) 2016 - Miguel Ángel Pérez Martínez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*********************************************************************************/
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -30,6 +55,37 @@ class Context {
     }
 }
 exports.Context = Context;
+class HttpError {
+    constructor(code, message) {
+        this.code = code;
+        this.message = message;
+    }
+}
+exports.HttpError = HttpError;
+class BadRequest extends HttpError {
+    constructor(message) {
+        super(400, message);
+    }
+}
+exports.BadRequest = BadRequest;
+class Unauthorized extends HttpError {
+    constructor(message) {
+        super(401, message);
+    }
+}
+exports.Unauthorized = Unauthorized;
+class NotFound extends HttpError {
+    constructor(message) {
+        super(404, message);
+    }
+}
+exports.NotFound = NotFound;
+class InternalServerError extends HttpError {
+    constructor(message) {
+        super(500, message);
+    }
+}
+exports.InternalServerError = InternalServerError;
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -428,11 +484,37 @@ function createRouterRecursive(app, controllerNode) {
     }
     return controller;
 }
-function addControllersToExpressApp(app, ...requiredDirectories) {
-    addControllersToExpressAppAtRoute("/", app, ...requiredDirectories);
+function OnRequestError(err, req, res, next) {
+    if (err.name === "UnauthorizedError") {
+        res.sendStatus(401);
+    }
+    else {
+        if (process.env.NODE_ENV === "development") {
+            res.statusCode = 500;
+            if (err instanceof Error) {
+                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                res.json({ name: err.name, message: err.message });
+            }
+            else {
+                U.defaultError(err);
+                res.json(err);
+            }
+        }
+        else {
+            res.sendStatus(500);
+        }
+    }
 }
-exports.addControllersToExpressApp = addControllersToExpressApp;
-function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories) {
+function OnRequestNotFound(req, res, next) {
+    res.sendStatus(404);
+}
+function initialize(app, ...requiredDirectories) {
+    initializeAtRoute("/", app, ...requiredDirectories);
+}
+exports.initialize = initialize;
+function initializeAtRoute(rootPath, app, ...requiredDirectories) {
+    app.use(OnRequestError);
+    app.use(OnRequestNotFound);
     for (let requiredDirectory of requiredDirectories) {
         let path = "";
         if (requiredDirectory.charAt(0) == "/") {
@@ -463,7 +545,7 @@ function addControllersToExpressAppAtRoute(rootPath, app, ...requiredDirectories
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
 }
-exports.addControllersToExpressAppAtRoute = addControllersToExpressAppAtRoute;
+exports.initializeAtRoute = initializeAtRoute;
 function getActionRoute(controller, methodName, httpMethod) {
     let kc = exports.globalKCState.getOrInsertController(controller);
     if (kc.methods[methodName] != undefined) {

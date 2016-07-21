@@ -1,3 +1,28 @@
+/*********************************************************************************
+
+MIT License
+
+Copyright (c) 2016 - Miguel Ángel Pérez Martínez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*********************************************************************************/
 import * as Express from "express";
 export interface IDisposable {
     dispose(): void;
@@ -15,6 +40,23 @@ export declare class Context {
         new (...args: any[]): T;
     }, ...args: any[]): T;
     dispose(): void;
+}
+export declare class HttpError {
+    code: number;
+    message: string;
+    constructor(code: number, message: string);
+}
+export declare class BadRequest extends HttpError {
+    constructor(message: string);
+}
+export declare class Unauthorized extends HttpError {
+    constructor(message: string);
+}
+export declare class NotFound extends HttpError {
+    constructor(message: string);
+}
+export declare class InternalServerError extends HttpError {
+    constructor(message: string);
 }
 export declare let globalKCState: KwyjiboControllersState;
 /*********************************************************
@@ -149,6 +191,6 @@ export declare class KwyjiboControllersState {
     getOrInsertController(ctr: Function): KwyjiboController;
     registerMountPoint(dstCtr: any, ctr: Function): void;
 }
-export declare function addControllersToExpressApp(app: Express.Application, ...requiredDirectories: string[]): void;
-export declare function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void;
+export declare function initialize(app: Express.Application, ...requiredDirectories: string[]): void;
+export declare function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void;
 export declare function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string): string;

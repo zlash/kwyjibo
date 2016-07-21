@@ -60,6 +60,39 @@ export class Context {
     }
 }
 
+export class HttpError {
+    code: number;
+    message: string;
+    constructor(code: number, message: string) {
+        this.code = code;
+        this.message = message;
+    }
+}
+
+export class BadRequest extends HttpError {
+    constructor(message: string) {
+        super(400, message);
+    }
+}
+
+export class Unauthorized extends HttpError {
+    constructor(message: string) {
+        super(401, message);
+    }
+}
+
+export class NotFound extends HttpError {
+    constructor(message: string) {
+        super(404, message);
+    }
+}
+
+export class InternalServerError extends HttpError {
+    constructor(message: string) {
+        super(500, message);
+    }
+}
+
 export let globalKCState: KwyjiboControllersState;
 
 /*********************************************************
@@ -538,11 +571,38 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     return controller;
 }
 
-export function addControllersToExpressApp(app: Express.Application, ...requiredDirectories: string[]): void {
-    addControllersToExpressAppAtRoute("/", app, ...requiredDirectories);
+
+function OnRequestError(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+    if (err.name === "UnauthorizedError") {
+        res.sendStatus(401);
+    } else {
+        if (process.env.NODE_ENV === "development") {
+            res.statusCode = 500;
+            if (err instanceof Error) {
+                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                res.json({ name: err.name, message: err.message });
+            } else {
+                U.defaultError(err);
+                res.json(err);
+            }
+        } else {
+            res.sendStatus(500);
+        }
+    }
 }
 
-export function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
+function OnRequestNotFound(req: Express.Request, res: Express.Response, next: Function): void {
+    res.sendStatus(404);
+}
+
+export function initialize(app: Express.Application, ...requiredDirectories: string[]): void {
+    initializeAtRoute("/", app, ...requiredDirectories);
+}
+
+export function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
+
+    app.use(OnRequestError);
+    app.use(OnRequestNotFound);
 
     for (let requiredDirectory of requiredDirectories) {
 
