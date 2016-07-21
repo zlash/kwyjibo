@@ -420,7 +420,10 @@ function mountMethod(controller, instance, methodKey) {
                 if (ret instanceof Promise) {
                     ret = yield ret;
                 }
-                if (ret instanceof Object) {
+                if (ret instanceof HttpError) {
+                    res.status(ret.status).send(ret.message);
+                }
+                else if (ret instanceof Object) {
                     res.json(ret);
                 }
                 else if (typeof (ret) === "string") {
@@ -484,7 +487,7 @@ function createRouterRecursive(app, controllerNode) {
     }
     return controller;
 }
-function OnRequestError(err, req, res, next) {
+function onRequestError(err, req, res, next) {
     if (err.name === "UnauthorizedError") {
         res.sendStatus(401);
     }
@@ -505,7 +508,7 @@ function OnRequestError(err, req, res, next) {
         }
     }
 }
-function OnRequestNotFound(req, res, next) {
+function onRequestNotFound(req, res, next) {
     res.sendStatus(404);
 }
 function initialize(app, ...requiredDirectories) {
@@ -513,8 +516,6 @@ function initialize(app, ...requiredDirectories) {
 }
 exports.initialize = initialize;
 function initializeAtRoute(rootPath, app, ...requiredDirectories) {
-    app.use(OnRequestError);
-    app.use(OnRequestNotFound);
     for (let requiredDirectory of requiredDirectories) {
         let path = "";
         if (requiredDirectory.charAt(0) == "/") {
@@ -544,6 +545,8 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     if (process.env.NODE_ENV === "development") {
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
+    app.use(onRequestError);
+    app.use(onRequestNotFound);
 }
 exports.initializeAtRoute = initializeAtRoute;
 function getActionRoute(controller, methodName, httpMethod) {

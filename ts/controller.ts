@@ -485,7 +485,9 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                     ret = await ret;
                 }
 
-                if (ret instanceof Object) {
+                if (ret instanceof HttpError) {
+                    res.status(ret.status).send(ret.message);
+                } else if (ret instanceof Object) {
                     res.json(ret);
                 } else if (typeof (ret) === "string") {
                     res.send(ret);
@@ -572,7 +574,7 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
 }
 
 
-function OnRequestError(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+function onRequestError(err: any, req: Express.Request, res: Express.Response, next: Function): void {
     if (err.name === "UnauthorizedError") {
         res.sendStatus(401);
     } else {
@@ -591,7 +593,7 @@ function OnRequestError(err: any, req: Express.Request, res: Express.Response, n
     }
 }
 
-function OnRequestNotFound(req: Express.Request, res: Express.Response, next: Function): void {
+function onRequestNotFound(req: Express.Request, res: Express.Response, next: Function): void {
     res.sendStatus(404);
 }
 
@@ -600,9 +602,6 @@ export function initialize(app: Express.Application, ...requiredDirectories: str
 }
 
 export function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
-
-    app.use(OnRequestError);
-    app.use(OnRequestNotFound);
 
     for (let requiredDirectory of requiredDirectories) {
 
@@ -641,6 +640,8 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
+    app.use(onRequestError);
+    app.use(onRequestNotFound);
 }
 
 
