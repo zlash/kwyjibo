@@ -62,13 +62,8 @@ Once you have an Express app up and running (and using TypeScript), go to a term
 And right after creating the Http server, add the following lines (assuming `expressApp` is an object containing the Express app):
 
 ```typescript
-// Set Kwyjibo loggers
-Kwyjibo.defaultError = (toLog: any) => { console.error(toLog); };
-Kwyjibo.defaultWarn = (toLog: any) => { console.warn(toLog); };
-Kwyjibo.defaultLog = (toLog: any) => { console.log(toLog); };
-
 // Init all Kwyjibo controllers and tests (assuming "tests" and "controllers" folders)
-Kwyjibo.addControllersToExpressApp(App.express, "tests", "controllers");
+Kwyjibo.initialize(App.express, "tests", "controllers");
 ```
 
 This will configure the framework loggers, and load all the tests and controllers that are inside the `tests` and `controllers` folders
@@ -107,6 +102,17 @@ By default, the action methods receive at least a `context: Kwyjibo.Context` par
  - `Promise<Object>`
 
 In any of those cases, if an exception is thrown (or the promise is rejected), the exception will be handled by the error handler middlewares configured in Express.
+
+Also, a method can return an HttpError for which the correct status and message will be sent. For example:
+```typescript
+async someMethod(context:Context): Promise<Object|HttpError> {
+	let retObj = await someMethodThatBringsTheObject();
+	if(retObj == undefined) {
+		return NotFound("Cannot find the requested object");
+	}
+	return retObj;
+}
+```
 
 ###Parameters
 
