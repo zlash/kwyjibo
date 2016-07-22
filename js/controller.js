@@ -516,6 +516,16 @@ function initialize(app, ...requiredDirectories) {
 }
 exports.initialize = initialize;
 function initializeAtRoute(rootPath, app, ...requiredDirectories) {
+    let implicitTests = false;
+    let implicitControllers = false;
+    if (!requiredDirectories.find((p) => { return p === "tests"; })) {
+        requiredDirectories.push("tests");
+        implicitTests = true;
+    }
+    if (!requiredDirectories.find((p) => { return p === "controllers"; })) {
+        requiredDirectories.push("controllers");
+        implicitControllers = true;
+    }
     for (let requiredDirectory of requiredDirectories) {
         let path = "";
         if (requiredDirectory.charAt(0) == "/") {
@@ -525,10 +535,14 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
             path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
         }
         try {
+            U.defaultLog("Loading components from: " + path);
             FS.accessSync(path);
         }
         catch (err) {
-            U.defaultWarn("Cannot access path: " + path);
+            if ((requiredDirectory !== "controllers" || implicitControllers) &&
+                (requiredDirectory !== "tests" || implicitTests)) {
+                U.defaultWarn("Cannot access path: " + path);
+            }
             continue;
         }
         require("require-all")(path);

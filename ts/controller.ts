@@ -603,6 +603,19 @@ export function initialize(app: Express.Application, ...requiredDirectories: str
 
 export function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
 
+    let implicitTests = false;
+    let implicitControllers = false;
+
+    if (!requiredDirectories.find((p) => { return p === "tests"; })) {
+        requiredDirectories.push("tests");
+        implicitTests = true;
+    }
+
+    if (!requiredDirectories.find((p) => { return p === "controllers"; })) {
+        requiredDirectories.push("controllers");
+        implicitControllers = true;
+    }
+
     for (let requiredDirectory of requiredDirectories) {
 
         let path = "";
@@ -614,9 +627,13 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         }
 
         try {
+            U.defaultLog("Loading components from: " + path);
             FS.accessSync(path);
         } catch (err) {
-            U.defaultWarn("Cannot access path: " + path);
+            if ((requiredDirectory !== "controllers" || implicitControllers) &&
+                (requiredDirectory !== "tests" || implicitTests)) {
+                U.defaultWarn("Cannot access path: " + path);
+            }
             continue;
         }
 
