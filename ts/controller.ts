@@ -486,7 +486,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                 }
 
                 if (ret instanceof HttpError) {
-                    res.status(ret.status).send(ret.message);
+                    res.status(ret.code).send(ret.message);
                 } else if (ret instanceof Object) {
                     res.json(ret);
                 } else if (typeof (ret) === "string") {

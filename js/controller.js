@@ -421,7 +421,7 @@ function mountMethod(controller, instance, methodKey) {
                     ret = yield ret;
                 }
                 if (ret instanceof HttpError) {
-                    res.status(ret.status).send(ret.message);
+                    res.status(ret.code).send(ret.message);
                 }
                 else if (ret instanceof Object) {
                     res.json(ret);
