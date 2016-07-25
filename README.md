@@ -63,7 +63,8 @@ And right after creating the Http server, add the following lines (assuming `exp
 
 ```typescript
 // Init all Kwyjibo controllers and tests (assuming "tests" and "controllers" folders)
-Kwyjibo.initialize(App.express, "tests", "controllers");
+// To use custom folders, pass the folder names as extra parameters to initialize
+Kwyjibo.initialize(App.express);
 ```
 
 This will configure the framework loggers, and load all the tests and controllers that are inside the `tests` and `controllers` folders
