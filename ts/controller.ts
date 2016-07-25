@@ -485,9 +485,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                     ret = await ret;
                 }
 
-                if (ret instanceof HttpError) {
-                    res.status(ret.code).send(ret.message);
-                } else if (ret instanceof Object) {
+                if (ret instanceof Object) {
                     res.json(ret);
                 } else if (typeof (ret) === "string") {
                     res.send(ret);
@@ -580,7 +578,9 @@ function onRequestError(err: any, req: Express.Request, res: Express.Response, n
     } else {
         if (process.env.NODE_ENV === "development") {
             res.statusCode = 500;
-            if (err instanceof Error) {
+            if (err instanceof HttpError) {
+                res.status(err.code).send(err.message);
+            } else if (err instanceof Error) {
                 U.defaultError({ name: err.name, message: err.message, stack: err.stack });
                 res.json({ name: err.name, message: err.message });
             } else {
@@ -630,8 +630,8 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
             U.defaultLog("Loading components from: " + path);
             FS.accessSync(path);
         } catch (err) {
-            if ((requiredDirectory !== "controllers" || implicitControllers) &&
-                (requiredDirectory !== "tests" || implicitTests)) {
+            if ((requiredDirectory !== "controllers" || !implicitControllers) &&
+                (requiredDirectory !== "tests" || !implicitTests)) {
                 U.defaultWarn("Cannot access path: " + path);
             }
             continue;
