@@ -420,10 +420,7 @@ function mountMethod(controller, instance, methodKey) {
                 if (ret instanceof Promise) {
                     ret = yield ret;
                 }
-                if (ret instanceof HttpError) {
-                    res.status(ret.code).send(ret.message);
-                }
-                else if (ret instanceof Object) {
+                if (ret instanceof Object) {
                     res.json(ret);
                 }
                 else if (typeof (ret) === "string") {
@@ -494,7 +491,10 @@ function onRequestError(err, req, res, next) {
     else {
         if (process.env.NODE_ENV === "development") {
             res.statusCode = 500;
-            if (err instanceof Error) {
+            if (err instanceof HttpError) {
+                res.status(err.code).send(err.message);
+            }
+            else if (err instanceof Error) {
                 U.defaultError({ name: err.name, message: err.message, stack: err.stack });
                 res.json({ name: err.name, message: err.message });
             }
@@ -539,8 +539,8 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
             FS.accessSync(path);
         }
         catch (err) {
-            if ((requiredDirectory !== "controllers" || implicitControllers) &&
-                (requiredDirectory !== "tests" || implicitTests)) {
+            if ((requiredDirectory !== "controllers" || !implicitControllers) &&
+                (requiredDirectory !== "tests" || !implicitTests)) {
                 U.defaultWarn("Cannot access path: " + path);
             }
             continue;
