@@ -1,3 +1,29 @@
+/*********************************************************************************
+
+MIT License
+
+Copyright (c) 2016 - Miguel Ángel Pérez Martínez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*********************************************************************************/
+
 import * as Express from "express";
 import * as U from "./utils";
 import * as T from "./testing";
@@ -31,6 +57,39 @@ export class Context {
         for (let instance of this.disposableInstances) {
             instance.dispose();
         }
+    }
+}
+
+export class HttpError {
+    code: number;
+    message: string;
+    constructor(code: number, message: string) {
+        this.code = code;
+        this.message = message;
+    }
+}
+
+export class BadRequest extends HttpError {
+    constructor(message: string) {
+        super(400, message);
+    }
+}
+
+export class Unauthorized extends HttpError {
+    constructor(message: string) {
+        super(401, message);
+    }
+}
+
+export class NotFound extends HttpError {
+    constructor(message: string) {
+        super(404, message);
+    }
+}
+
+export class InternalServerError extends HttpError {
+    constructor(message: string) {
+        super(500, message);
     }
 }
 
@@ -512,11 +571,50 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     return controller;
 }
 
-export function addControllersToExpressApp(app: Express.Application, ...requiredDirectories: string[]): void {
-    addControllersToExpressAppAtRoute("/", app, ...requiredDirectories);
+
+function onRequestError(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+    if (err.name === "UnauthorizedError") {
+        res.sendStatus(401);
+    } else {
+        if (process.env.NODE_ENV === "development") {
+                res.statusCode = 500;
+            if (err instanceof HttpError) {
+                res.status(err.code).send(err.message);
+            } else if (err instanceof Error) {
+                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                res.json({ name: err.name, message: err.message });
+            } else {
+                U.defaultError(err);
+                res.json(err);
+            }
+        } else {
+            res.sendStatus(500);
+        }
+    }
 }
 
-export function addControllersToExpressAppAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
+function onRequestNotFound(req: Express.Request, res: Express.Response, next: Function): void {
+    res.sendStatus(404);
+}
+
+export function initialize(app: Express.Application, ...requiredDirectories: string[]): void {
+    initializeAtRoute("/", app, ...requiredDirectories);
+}
+
+export function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
+
+    let implicitTests = false;
+    let implicitControllers = false;
+
+    if (!requiredDirectories.find((p) => { return p === "tests"; })) {
+        requiredDirectories.push("tests");
+        implicitTests = true;
+    }
+
+    if (!requiredDirectories.find((p) => { return p === "controllers"; })) {
+        requiredDirectories.push("controllers");
+        implicitControllers = true;
+    }
 
     for (let requiredDirectory of requiredDirectories) {
 
@@ -529,9 +627,13 @@ export function addControllersToExpressAppAtRoute(rootPath: string, app: Express
         }
 
         try {
+            U.defaultLog("Loading components from: " + path);
             FS.accessSync(path);
         } catch (err) {
-            U.defaultWarn("Cannot access path: " + path);
+            if ((requiredDirectory !== "controllers" || !implicitControllers) &&
+                (requiredDirectory !== "tests" || !implicitTests)) {
+                U.defaultWarn("Cannot access path: " + path);
+            }
             continue;
         }
 
@@ -555,6 +657,8 @@ export function addControllersToExpressAppAtRoute(rootPath: string, app: Express
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
+    app.use(onRequestError);
+    app.use(onRequestNotFound);
 }
 
 

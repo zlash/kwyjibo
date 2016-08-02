@@ -1,15 +1,21 @@
 #Kwyjibo
 A set of TypeScript Decorators and helpers for a better node.js+Express experience.
 
+##TL;DR
+Watch this video
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/OiXc3kKcn5g/0.jpg)](http://www.youtube.com/watch?v=OiXc3kKcn5g)
+
+
 ##Key features
 
 - [Requirements](#requirements)
 - [Express integration](#express-integration)
 - [Controllers and Actions](#controllers-and-actions)
 - [Custom mount conditions](#custom-mount-conditions)
+- [Error Handling](#error-handling)
 - [Tests execution and automation](#tests-execution-and-automation)
 - [Documentation generator](#documentation-generator)
-
 
 ##Quickstart
 
@@ -62,13 +68,9 @@ Once you have an Express app up and running (and using TypeScript), go to a term
 And right after creating the Http server, add the following lines (assuming `expressApp` is an object containing the Express app):
 
 ```typescript
-// Set Kwyjibo loggers
-Kwyjibo.defaultError = (toLog: any) => { console.error(toLog); };
-Kwyjibo.defaultWarn = (toLog: any) => { console.warn(toLog); };
-Kwyjibo.defaultLog = (toLog: any) => { console.log(toLog); };
-
 // Init all Kwyjibo controllers and tests (assuming "tests" and "controllers" folders)
-Kwyjibo.addControllersToExpressApp(App.express, "tests", "controllers");
+// To use custom folders, pass the folder names as extra parameters to initialize
+Kwyjibo.initialize(App.express);
 ```
 
 This will configure the framework loggers, and load all the tests and controllers that are inside the `tests` and `controllers` folders
@@ -107,6 +109,17 @@ By default, the action methods receive at least a `context: Kwyjibo.Context` par
  - `Promise<Object>`
 
 In any of those cases, if an exception is thrown (or the promise is rejected), the exception will be handled by the error handler middlewares configured in Express.
+
+Also, a method can return an HttpError for which the correct status and message will be sent. For example:
+```typescript
+async someMethod(context:Context): Promise<Object|HttpError> {
+	let retObj = await someMethodThatBringsTheObject();
+	if(retObj == undefined) {
+		return NotFound("Cannot find the requested object");
+	}
+	return retObj;
+}
+```
 
 ###Parameters
 
@@ -178,6 +191,34 @@ When the node app is started with the environment variable `NODE_ENV = developme
 
 Also, if you have controllers that should only be exposed in development environment, you can use the `@Dev` controller decorator (a special case of a custom mount condition) and it will only be mounted if that condition is met.
 
+
+##Error Handling
+
+Kwijibo will automatically handle errors thrown inside actions and send a `500 Internal Server Error` response.
+However, you can throw known error types that Kwyjibo can handle:
+- `HttpError`: custom HttpError, with message and status code
+- `InternalServerError`: 500 error with message
+- `NotFound`: 404 error with message
+- `BadRequest`: 400 error with message
+- `Unauthorized`: 401 error with message
+
+For instance, if you wanted to validate a payload in a web API, you would do something like this:
+
+```typescript
+@Controller("/api")
+class Api {
+	@Get()
+	doSomething(context: Context, @FromQuery("id") id: string): Object {
+		if (id == undefined) {
+			throw new BadRequest("id parameter is required");
+		}
+		
+		return {
+			value: id
+		};
+	}
+}
+```
 
 ##Tests execution and automation
 
