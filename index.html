@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Kwyjibo by zlash</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Kwyjibo</h1>
+      <h2 class="project-tagline">A set of Typescript Decorators and helpers to write better node.js+Express applications.</h2>
+      <a href="https://github.com/zlash/kwyjibo" class="btn">View on GitHub</a>
+      <a href="https://github.com/zlash/kwyjibo/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/zlash/kwyjibo/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="kwyjibo" class="anchor" href="#kwyjibo" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kwyjibo</h1>
+
+<p>A set of TypeScript Decorators and helpers for a better node.js+Express experience.</p>
+
+<h2>
+<a id="tldr" class="anchor" href="#tldr" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>TL;DR</h2>
+
+<p>Watch this video</p>
+
+<p><a href="http://www.youtube.com/watch?v=OiXc3kKcn5g"><img src="http://img.youtube.com/vi/OiXc3kKcn5g/0.jpg" alt="Video"></a></p>
+
+<h2>
+<a id="key-features" class="anchor" href="#key-features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Key features</h2>
+
+<ul>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#express-integration">Express integration</a></li>
+<li><a href="#controllers-and-actions">Controllers and Actions</a></li>
+<li><a href="#custom-mount-conditions">Custom mount conditions</a></li>
+<li><a href="#error-handling">Error Handling</a></li>
+<li><a href="#tests-execution-and-automation">Tests execution and automation</a></li>
+<li><a href="#documentation-generator">Documentation generator</a></li>
+</ul>
+
+<h2>
+<a id="quickstart" class="anchor" href="#quickstart" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Quickstart</h2>
+
+<ol>
+<li>Install <a href="https://code.visualstudio.com/Download">Visual Studio Code</a>
+</li>
+<li>
+<p>Install <code>yo</code> with the  <code>generator-kwyjibo</code> package, and the required dependencies for every-day development (<code>typescript</code>)</p>
+
+<pre><code>npm install --global yo generator-kwyjibo typescript@beta
+</code></pre>
+</li>
+<li>
+<p>Use the <code>generator-kwyjibo</code> to scaffold a new web app in the current directory. When asked, give a name to the app and answer <code>Yes</code> to every generator option</p>
+
+<pre><code>yo kwyjibo
+</code></pre>
+</li>
+<li>
+<p>Start Visual Studio Code</p>
+
+<pre><code>code .
+</code></pre>
+</li>
+<li><p>Press <code>F1</code> and type <code>&gt;Run Build Task</code> to build the app</p></li>
+<li><p>Press <code>F5</code>  to start the Kwyjibo app in <code>http://localhost:3000</code></p></li>
+<li><p>You did it! Your Kwyjibo app is up and running!</p></li>
+</ol>
+
+<h2>
+<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements</h2>
+
+<p>To use the Kwyjibo framework with a Node.js+Express web app, the minimum requirements are:</p>
+
+<ul>
+<li>Node.js 6.x</li>
+<li>Express 4.14.0</li>
+<li>TypeScript 2.0.0 (beta), with:
+
+<ul>
+<li>
+<code>experimentalDecorators</code> support </li>
+<li>ECMAScript 6 target </li>
+</ul>
+</li>
+</ul>
+
+<p>(in your <code>tsconfig.json</code> file, inside <code>compilerOptions</code> set <code>experimentalDecorators</code> to <code>true</code> and <code>target</code> to <code>es6</code>)</p>
+
+<h2>
+<a id="express-integration" class="anchor" href="#express-integration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Express integration</h2>
+
+<p>The easiest way to use Kwyjibo is using the Yeoman generator, as it is explained in the <a href="#quickstart">quickstart</a>. However, if you already have an Express application, or just don't want to use the generator, you can use this steps to integrate Kwyjibo with an existing Express app.</p>
+
+<p>Once you have an Express app up and running (and using TypeScript), go to a terminal and run <code>npm install --save kwyjibo</code> to add it as a dependency to you app. Then, open the app entrypoint (let's say, <code>app.ts</code>) and add the following line at the beginning:</p>
+
+<p><code>import * as Kwyjibo from "kwyjibo"</code></p>
+
+<p>And right after creating the Http server, add the following lines (assuming <code>expressApp</code> is an object containing the Express app):</p>
+
+<div class="highlight highlight-source-ts"><pre><span class="pl-c">// Init all Kwyjibo controllers and tests (assuming "tests" and "controllers" folders)</span>
+<span class="pl-c">// To use custom folders, pass the folder names as extra parameters to initialize</span>
+Kwyjibo.initialize(App.express);</pre></div>
+
+<p>This will configure the framework loggers, and load all the tests and controllers that are inside the <code>tests</code> and <code>controllers</code> folders</p>
+
+<h2>
+<a id="controllers-and-actions" class="anchor" href="#controllers-and-actions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Controllers and Actions</h2>
+
+<p>The main components in a Kwyjibo app are the controllers and their actions.
+Each controller is a mount point for a set of actions, and each action can handle a request to a specific path and HTTP method.</p>
+
+<h3>
+<a id="controllers" class="anchor" href="#controllers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Controllers</h3>
+
+<p>The controllers must be decorated with the <code>@Controller</code> decorator, specifying the mount point:</p>
+
+<ul>
+<li>
+<code>@Controller("/myMountPoint")</code> will mount the controller in <code>/myMountPoint</code>.</li>
+<li>
+<code>@Controller(AnotherController, "/myMountPoint")</code> will mount the controller in the specified mount point, but using <code>AnotherController</code> as its root (for instance, this could be ended up being mounted as <code>/someMountPoint/myMountPoint</code>.</li>
+</ul>
+
+<p>You can - optionally - add the <code>@DocController</code> decorator to add documentation and the <code>@Middleware</code> decorator to apply middlewares to all the controller actions</p>
+
+<h3>
+<a id="actions" class="anchor" href="#actions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Actions</h3>
+
+<p>Each action is a method in the controller with either, a <code>@Get</code>, <code>@Post</code> or <code>@Method</code> decorator to specify its route and HTTP method, or at least one of the <code>@DocAction</code> or <code>@ActionMiddleware</code> decorators, and it will use the default mount point (the method name, using the <code>GET</code> HTTP method)</p>
+
+<p>The <code>@DocAction</code> the same way <code>@DocController</code> does, but for actions, and the <code>@ActionMiddleware</code> to apply middlewares to particular actions. </p>
+
+<p>By default, the action methods receive at least a <code>context: Kwyjibo.Context</code> parameter that allows it to access the request and response objects and can return:</p>
+
+<ul>
+<li>If the action just returns <code>200 OK</code>, invokes to <code>context.response.render</code> or manually handles the <code>context.response</code>:
+
+<ul>
+<li>
+<code>void</code> </li>
+<li><code>Promise&lt;void&gt;</code></li>
+</ul>
+</li>
+<li>if the actions returns <code>200 OK</code> and sends a string as a response (for instance, an HTML):<br>
+
+<ul>
+<li><code>string</code></li>
+<li><code>Promise&lt;string&gt;</code></li>
+</ul>
+</li>
+<li>If the action returns a <code>200 OK</code> and sends a <code>json</code> object as a response:<br>
+
+<ul>
+<li><code>Object</code></li>
+<li><code>Promise&lt;Object&gt;</code></li>
+</ul>
+</li>
+</ul>
+
+<p>In any of those cases, if an exception is thrown (or the promise is rejected), the exception will be handled by the error handler middlewares configured in Express.</p>
+
+<p>Also, a method can return an HttpError for which the correct status and message will be sent. For example:</p>
+
+<div class="highlight highlight-source-ts"><pre>async someMethod(context:Context): <span class="pl-en">Promise</span>&lt;Object<span class="pl-k">|</span>HttpError&gt; {
+    <span class="pl-k">let</span> <span class="pl-v">retObj</span> = <span class="pl-k">await</span> someMethodThatBringsTheObject();
+    <span class="pl-k">if</span>(retObj <span class="pl-k">==</span> <span class="pl-c1">undefined</span>) {
+        <span class="pl-k">return</span> NotFound(<span class="pl-s">"Cannot find the requested object"</span>);
+    }
+    <span class="pl-k">return</span> retObj;
+}</pre></div>
+
+<h3>
+<a id="parameters" class="anchor" href="#parameters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parameters</h3>
+
+<p>To use request parameters from the body, route path, querystring, headers or cookies, you can decorate any action parameter but the first (that must be the context) with the following decorators:</p>
+
+<ul>
+<li><code>@FromBody("paramName")</code></li>
+<li><code>@FromPath("paramName")</code></li>
+<li><code>@FromQuery("paramName")</code></li>
+<li><code>@FromHeader("paramName")</code></li>
+<li><code>@FromCookie("paramName")</code></li>
+</ul>
+
+<p>For instance, to create a controller for users operations:</p>
+
+<ul>
+<li>Create a <code>controllers</code> folder in your app root and create a <code>usersController.ts</code> file inside.</li>
+<li>Add the following code:</li>
+</ul>
+
+<div class="highlight highlight-source-ts"><pre><span class="pl-k">import</span> <span class="pl-k">*</span> <span class="pl-k">as</span> K <span class="pl-k">from</span> <span class="pl-s">"kwyjibo"</span>;
+
+@K.Controller(<span class="pl-s">"/users"</span>)
+@K.DocController(<span class="pl-s">"Users Controller."</span>)
+@K.Middleware(UsersController.loggingMiddleware)
+<span class="pl-k">class</span> <span class="pl-en">UsersController</span> {
+
+    <span class="pl-k">static</span> <span class="pl-en">loggingMiddleware</span>(<span class="pl-v">req</span>: Express.Request, <span class="pl-v">res</span>: Express.Response, <span class="pl-v">next</span>: Function) {
+        console.log(<span class="pl-s">"Request to: "</span> <span class="pl-k">+</span> req.path);
+    }
+
+    @<span class="pl-en">K.Get</span>("/")
+    @<span class="pl-en">K.DocAction</span>(`<span class="pl-v">Users</span> <span class="pl-v">index</span>`)
+    <span class="pl-en">index</span>(<span class="pl-v">context</span>: K.Context): <span class="pl-k">string</span> {
+        <span class="pl-k">return</span> <span class="pl-s">"&lt;html&gt;&lt;body&gt;&lt;ul&gt;&lt;li&gt;/list: all users&lt;/li&gt;&lt;li&gt;/user/:id: specifi user&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;"</span>;
+    }
+
+    @<span class="pl-en">K.Get</span>("/<span class="pl-v">list</span>")
+    @<span class="pl-en">K.DocAction</span>(`<span class="pl-v">Return</span> <span class="pl-v">all</span> <span class="pl-v">users</span>`)
+    <span class="pl-en">allUsers</span>(<span class="pl-v">context</span>: Context): Object {
+        <span class="pl-k">let</span> <span class="pl-v">users</span> = UsersRepository.getAllUsers();
+        <span class="pl-k">return</span> users; <span class="pl-c">// this action will send a json object</span>
+    }
+
+    @<span class="pl-en">Get</span>("/<span class="pl-v">user</span>/:id<span class="pl-s">")</span>
+    @<span class="pl-v">DocAction</span>(`<span class="pl-v">Return</span> <span class="pl-v">a</span> <span class="pl-v">specific</span> <span class="pl-v">user</span>`)
+    <span class="pl-en">oneUser</span>(<span class="pl-v">context</span>: Context, @<span class="pl-v">FromPath</span>("<span class="pl-v">id</span>") id: <span class="pl-k">string</span>): <span class="pl-k">string</span> {
+        <span class="pl-k">let</span> <span class="pl-v">user</span> = UsersRepository.getUser(id);
+        <span class="pl-k">return</span> user;
+    }
+}</pre></div>
+
+<h3>
+<a id="migration-from-standard-express" class="anchor" href="#migration-from-standard-express" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Migration from standard Express</h3>
+
+<p>If you want to use the standard Express route method signature, instead of just receiving the <code>context</code> object (useful to migrate classic Express apps to Kwyjibo), you can use the <code>@ExpressCompatible</code> decorator and create methods like this:</p>
+
+<div class="highlight highlight-source-ts"><pre>@Get(<span class="pl-s">"/somewhere)</span>
+@ExpressCompatible()
+myExpressCompatibleAction(req: Express.Request, res: Express.Response, next: Function): <span class="pl-k">void</span> {
+    <span class="pl-c">// do something</span>
+}</pre></div>
+
+<h2>
+<a id="custom-mount-conditions" class="anchor" href="#custom-mount-conditions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Custom mount conditions</h2>
+
+<p>If you want to mount controllers conditionally, you can use the <code>@MountCondition</code> decorator.</p>
+
+<h3>
+<a id="dev-environment" class="anchor" href="#dev-environment" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dev environment</h3>
+
+<p>When the node app is started with the environment variable <code>NODE_ENV = development</code>, every controller that doesn't have it's root endpoint mapped to an action will autogenerate an index with links to every action available at that endpoint.</p>
+
+<p>Also, if you have controllers that should only be exposed in development environment, you can use the <code>@Dev</code> controller decorator (a special case of a custom mount condition) and it will only be mounted if that condition is met.</p>
+
+<h2>
+<a id="error-handling" class="anchor" href="#error-handling" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Error Handling</h2>
+
+<p>Kwijibo will automatically handle errors thrown inside actions and send a <code>500 Internal Server Error</code> response.
+However, you can throw known error types that Kwyjibo can handle:</p>
+
+<ul>
+<li>
+<code>HttpError</code>: custom HttpError, with message and status code</li>
+<li>
+<code>InternalServerError</code>: 500 error with message</li>
+<li>
+<code>NotFound</code>: 404 error with message</li>
+<li>
+<code>BadRequest</code>: 400 error with message</li>
+<li>
+<code>Unauthorized</code>: 401 error with message</li>
+</ul>
+
+<p>For instance, if you wanted to validate a payload in a web API, you would do something like this:</p>
+
+<div class="highlight highlight-source-ts"><pre>@Controller(<span class="pl-s">"/api"</span>)
+<span class="pl-k">class</span> <span class="pl-en">Api</span> {
+    @<span class="pl-en">Get</span>()
+    <span class="pl-en">doSomething</span>(<span class="pl-v">context</span>: Context, @<span class="pl-v">FromQuery</span>("<span class="pl-v">id</span>") id: <span class="pl-k">string</span>): Object {
+        <span class="pl-k">if</span> (id <span class="pl-k">==</span> <span class="pl-c1">undefined</span>) {
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> BadRequest(<span class="pl-s">"id parameter is required"</span>);
+        }
+
+        <span class="pl-k">return</span> {
+            value: id
+        };
+    }
+}</pre></div>
+
+<h2>
+<a id="tests-execution-and-automation" class="anchor" href="#tests-execution-and-automation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Tests execution and automation</h2>
+
+<p>The Kwyjibo framework includes the autogeneration of endpoints for integration tests execution, in both interactive and automatic scenarios.</p>
+
+<h3>
+<a id="test-fixture" class="anchor" href="#test-fixture" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Test fixture</h3>
+
+<p>To add tests to you app, create a <code>sampleTests.ts</code> file inside the <code>tests</code> folder under the app root. The test fixture class must be decorated with <code>@Fixture</code> and each test is a method inside it that has the <code>@Test</code> decorator.</p>
+
+<p>To do the test preparation and cleanup, you can write methods inside the fixture with the <code>@Before</code> and <code>@After</code> decorators.</p>
+
+<p>Each test method can have either <code>void</code> or <code>Promise&lt;void&gt;</code>as its return type.</p>
+
+<p>If the test finishes its execution successfully, will be considered as passed. To make a test fail, it must throw an exeption, or reject the returned promise.</p>
+
+<p>A Test fixture example:</p>
+
+<div class="highlight highlight-source-ts"><pre><span class="pl-k">import</span> <span class="pl-k">*</span> <span class="pl-k">as</span> K <span class="pl-k">from</span> <span class="pl-s">"kwyjibo"</span>
+
+@K.Fixture()
+<span class="pl-k">export</span> <span class="pl-k">default</span> <span class="pl-k">class</span> <span class="pl-en">Fixture</span> {
+    @<span class="pl-en">K.Before</span>()
+    <span class="pl-en">prepare</span>(): <span class="pl-k">void</span> {
+        <span class="pl-c">// this method will run before the tests</span>
+    }
+
+    @<span class="pl-en">K.Test</span>("<span class="pl-v">A</span> <span class="pl-v">test</span> <span class="pl-v">that</span> <span class="pl-v">passes</span>")
+    <span class="pl-en">test1</span>(): <span class="pl-k">void</span> {
+        <span class="pl-c">// this test will pass</span>
+    }
+
+    @<span class="pl-en">K.Test</span>("<span class="pl-v">A</span> <span class="pl-v">test</span> <span class="pl-v">that</span> <span class="pl-v">fails</span>")
+    <span class="pl-en">test2</span>(): <span class="pl-en">Promise</span>&lt;<span class="pl-k">void</span>&gt; {
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Promise</span>&lt;<span class="pl-k">void</span>&gt;((resolve, reject) <span class="pl-k">=&gt;</span> {
+            reject(<span class="pl-k">new</span> Error(<span class="pl-s">'failed test!'</span>));
+        });
+    }
+
+    @<span class="pl-en">K.After</span>()
+    <span class="pl-en">cleanUp</span>(): <span class="pl-k">void</span> {
+        <span class="pl-c">// this method will run after the tests</span>
+    }
+}</pre></div>
+
+<h3>
+<a id="test-runner" class="anchor" href="#test-runner" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Test runner</h3>
+
+<p>Then, you have to add the <code>@TestRunner</code> decorator to a controller. It will scan for all the available test fixtures in the app and generate the endpoints to execute them.</p>
+
+<p>A controller with the autogenerated test endpoints (test runner):</p>
+
+<div class="highlight highlight-source-ts"><pre><span class="pl-k">import</span> <span class="pl-k">*</span> <span class="pl-k">as</span> K <span class="pl-k">from</span> <span class="pl-s">"kwyjibo"</span>;
+
+@K.TestRunner()
+@K.Controller(<span class="pl-s">"/test"</span>)
+<span class="pl-k">export</span> <span class="pl-k">default</span> <span class="pl-k">class</span> <span class="pl-en">Test</span> {
+}</pre></div>
+
+<p>The interactive test runner will explain how to invoke the same set of tests programatically. </p>
+
+<h2>
+<a id="documentation-generator" class="anchor" href="#documentation-generator" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Documentation generator</h2>
+
+<p>Kwyjibo reads all the <code>@DocController</code> and <code>@DocAction</code> decorators and uses that information to automatically generate documentation for your web app or API</p>
+
+<p>There are two functions available to access obtain the generated documentation:</p>
+
+<ul>
+<li>
+<code>Kwyjibo.getDocs()</code>: returns a <code>ControllerDocNode[]</code> representing all the controllers documentation with their actions.</li>
+<li>
+<code>Kwyjibo.getDocsAsHTML()</code>: returns a string with the controllers documentation as HTML</li>
+</ul>
+
+<p>For instance, if you wanted to have a documentation endpoint for your web API, and it should only be exposed when running in a dev environment, you should create the following controller:</p>
+
+<div class="highlight highlight-source-ts"><pre><span class="pl-k">import</span> <span class="pl-k">*</span> <span class="pl-k">as</span> K <span class="pl-k">from</span> <span class="pl-s">"kwyjibo"</span>;
+
+K.Dev()
+K.Controller(<span class="pl-s">"/docs"</span>)
+K.DocController(<span class="pl-s">"API Documentation"</span>)
+<span class="pl-k">export</span> <span class="pl-k">default</span> <span class="pl-k">class</span> <span class="pl-en">DocsController</span> {
+    @<span class="pl-en">K.Get</span>("/")
+    <span class="pl-en">htmlDocs</span>(<span class="pl-v">context</span>: K.Context): <span class="pl-k">string</span> {
+        <span class="pl-k">return</span> K.getDocsAsHTML();
+    }
+}</pre></div>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/zlash/kwyjibo">Kwyjibo</a> is maintained by <a href="https://github.com/zlash">zlash</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
