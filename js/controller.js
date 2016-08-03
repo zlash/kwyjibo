@@ -492,6 +492,7 @@ function onRequestError(err, req, res, next) {
         if (process.env.NODE_ENV === "development") {
             res.statusCode = 500;
             if (err instanceof HttpError) {
+                U.defaultError(err);
                 res.status(err.code).send(err.message);
             }
             else if (err instanceof Error) {
