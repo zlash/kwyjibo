@@ -178,6 +178,7 @@ export function TestRunner(): (f: Function) => void {
 export function Method(method: string, path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         path = (path != undefined) ? path : propertyKey;
+        method = method.toLowerCase();
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.methodMountpoints.push({ "path": U.UrlJoin("/", path), "httpMethod": method });
         m.explicitlyDeclared = true;
@@ -190,6 +191,18 @@ export function Get(path?: string): (a: any, s: string, pd: PropertyDescriptor) 
 
 export function Post(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return Method("post", path);
+}
+
+export function Put(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return Method("put", path);
+}
+
+export function Patch(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return Method("patch", path);
+}
+
+export function Delete(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return Method("delete", path);
 }
 
 /** 
@@ -542,7 +555,7 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     }
 
     let instance = Reflect.construct(controller.ctr, []);
-    controller.router = Express.Router({mergeParams: true});
+    controller.router = Express.Router({ mergeParams: true });
 
     for (let middleware of controller.middleware) {
         controller.router.use(middleware);
