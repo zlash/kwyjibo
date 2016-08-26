@@ -96,6 +96,9 @@ export declare function TestRunner(): (f: Function) => void;
 export declare function Method(method: string, path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 export declare function Get(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 export declare function Post(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Put(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Patch(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Delete(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  * Adds express middleware to run before the method
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
@@ -115,7 +118,7 @@ export declare function DocAction(docStr: string): (a: any, s: string, pd: Prope
  *********************************************************/
 export declare type RequestValueContainer = "body" | "query" | "path" | "header" | "cookie";
 export declare function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare function FromBody(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function FromBody(valueKey?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare function FromQuery(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare function FromPath(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare function FromHeader(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;

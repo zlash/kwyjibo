@@ -169,6 +169,7 @@ exports.TestRunner = TestRunner;
 function Method(method, path) {
     return function (target, propertyKey, descriptor) {
         path = (path != undefined) ? path : propertyKey;
+        method = method.toLowerCase();
         let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.methodMountpoints.push({ "path": U.UrlJoin("/", path), "httpMethod": method });
         m.explicitlyDeclared = true;
@@ -183,6 +184,18 @@ function Post(path) {
     return Method("post", path);
 }
 exports.Post = Post;
+function Put(path) {
+    return Method("put", path);
+}
+exports.Put = Put;
+function Patch(path) {
+    return Method("patch", path);
+}
+exports.Patch = Patch;
+function Delete(path) {
+    return Method("delete", path);
+}
+exports.Delete = Delete;
 /**
  * Adds express middleware to run before the method
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
@@ -398,7 +411,12 @@ function mountMethod(controller, instance, methodKey) {
                         else {
                             switch (mp.rvc) {
                                 case "body":
-                                    params.push(req.body[mp.valueKey]);
+                                    if (mp.valueKey == undefined || mp.valueKey === "") {
+                                        params.push(req.body);
+                                    }
+                                    else {
+                                        params.push(req.body[mp.valueKey]);
+                                    }
                                     break;
                                 case "query":
                                     params.push(req.query[mp.valueKey]);

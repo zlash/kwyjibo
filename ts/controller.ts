@@ -254,7 +254,7 @@ export function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey:
     };
 }
 
-export function FromBody(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+export function FromBody(valueKey?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
     return MapParameterToRequestValue("body", valueKey);
 }
 
@@ -472,7 +472,11 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                         } else {
                             switch (mp.rvc) {
                                 case "body":
-                                    params.push(req.body[mp.valueKey]);
+                                    if (mp.valueKey == undefined || mp.valueKey === "") {
+                                        params.push(req.body);
+                                    } else {
+                                        params.push(req.body[mp.valueKey]);
+                                    }
                                     break;
                                 case "query":
                                     params.push(req.query[mp.valueKey]);
