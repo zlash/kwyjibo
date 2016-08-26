@@ -462,7 +462,7 @@ function createRouterRecursive(app, controllerNode) {
         U.defaultWarn(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
     }
     let instance = Reflect.construct(controller.ctr, []);
-    controller.router = Express.Router();
+    controller.router = Express.Router({ mergeParams: true });
     for (let middleware of controller.middleware) {
         controller.router.use(middleware);
     }

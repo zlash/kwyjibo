@@ -542,7 +542,7 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     }
 
     let instance = Reflect.construct(controller.ctr, []);
-    controller.router = Express.Router();
+    controller.router = Express.Router({mergeParams: true});
 
     for (let middleware of controller.middleware) {
         controller.router.use(middleware);
