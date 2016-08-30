@@ -240,6 +240,21 @@ export function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescr
     };
 }
 
+/**
+ *  Attach a OpenApi Response to the method
+ *  @param {number|string} httpCode - The http code used for the response
+ *  @param {string} description - Response description
+ *  @param {string} type - The Open Api defined type.
+ */
+
+export function OpenApiResponse(httpCode: number | string, description: string, type: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+
+        httpCode = httpCode.toString();
+        m.openApiResponses[httpCode] = { description: description, type: type };
+    };
+}
 
 /*********************************************************
  * Method Parameters Decorators  
@@ -247,30 +262,30 @@ export function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescr
 
 export type RequestValueContainer = "body" | "query" | "path" | "header" | "cookie";
 
-export function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+export function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
     return function (target: any, propertyKey: string, parameterIndex: number) {
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
-        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
+        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey, "openApiType": openApiType };
     };
 }
 
-export function FromBody(valueKey?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("body", valueKey);
+export function FromBody(openApiType?: string, valueKey?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("body", valueKey, openApiType);
 }
 
-export function FromQuery(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("query", valueKey);
+export function FromQuery(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("query", valueKey, openApiType);
 }
 
-export function FromPath(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("path", valueKey);
+export function FromPath(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("path", valueKey, openApiType);
 }
 
-export function FromHeader(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("header", valueKey);
+export function FromHeader(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("header", valueKey, openApiType);
 }
-export function FromCookie(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("cookie", valueKey);
+export function FromCookie(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("cookie", valueKey, openApiType);
 }
 
 /*********************************************************
@@ -297,7 +312,11 @@ export function DumpInternals(): void {
 
 
 export type KwyjiboMethodMountpoint = { path: string; httpMethod: string };
-export type KwyjiboExtraParametersMapping = { rvc: RequestValueContainer; valueKey: string };
+export type KwyjiboExtraParametersMapping = { rvc: RequestValueContainer; valueKey: string; openApiType: string; };
+
+export class KwyjiboMethodOpenApiResponses {
+    [httpCode: string]: { description: string; type: string; }
+}
 
 export class KwyjiboMethod {
     methodMountpoints: KwyjiboMethodMountpoint[] = [];
@@ -305,6 +324,7 @@ export class KwyjiboMethod {
     extraParametersMappings: KwyjiboExtraParametersMapping[] = [];
     expressCompatible: boolean = false;
     docString: string = "";
+    openApiResponses: KwyjiboMethodOpenApiResponses = {};
     explicitlyDeclared: boolean = false;
 }
 

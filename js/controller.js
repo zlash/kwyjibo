@@ -230,31 +230,45 @@ function DocAction(docStr) {
     };
 }
 exports.DocAction = DocAction;
-function MapParameterToRequestValue(rvc, valueKey) {
+/**
+ *  Attach a OpenApi Response to the method
+ *  @param {number|string} httpCode - The http code used for the response
+ *  @param {string} description - Response description
+ *  @param {string} type - The Open Api defined type.
+ */
+function OpenApiResponse(httpCode, description, type) {
+    return function (target, propertyKey, descriptor) {
+        let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        httpCode = httpCode.toString();
+        m.openApiResponses[httpCode] = { description: description, type: type };
+    };
+}
+exports.OpenApiResponse = OpenApiResponse;
+function MapParameterToRequestValue(rvc, valueKey, openApiType) {
     return function (target, propertyKey, parameterIndex) {
         let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
-        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
+        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey, "openApiType": openApiType };
     };
 }
 exports.MapParameterToRequestValue = MapParameterToRequestValue;
-function FromBody(valueKey) {
-    return MapParameterToRequestValue("body", valueKey);
+function FromBody(openApiType, valueKey) {
+    return MapParameterToRequestValue("body", valueKey, openApiType);
 }
 exports.FromBody = FromBody;
-function FromQuery(valueKey) {
-    return MapParameterToRequestValue("query", valueKey);
+function FromQuery(valueKey, openApiType) {
+    return MapParameterToRequestValue("query", valueKey, openApiType);
 }
 exports.FromQuery = FromQuery;
-function FromPath(valueKey) {
-    return MapParameterToRequestValue("path", valueKey);
+function FromPath(valueKey, openApiType) {
+    return MapParameterToRequestValue("path", valueKey, openApiType);
 }
 exports.FromPath = FromPath;
-function FromHeader(valueKey) {
-    return MapParameterToRequestValue("header", valueKey);
+function FromHeader(valueKey, openApiType) {
+    return MapParameterToRequestValue("header", valueKey, openApiType);
 }
 exports.FromHeader = FromHeader;
-function FromCookie(valueKey) {
-    return MapParameterToRequestValue("cookie", valueKey);
+function FromCookie(valueKey, openApiType) {
+    return MapParameterToRequestValue("cookie", valueKey, openApiType);
 }
 exports.FromCookie = FromCookie;
 /*********************************************************
@@ -274,6 +288,9 @@ function DumpInternals() {
     }
 }
 exports.DumpInternals = DumpInternals;
+class KwyjiboMethodOpenApiResponses {
+}
+exports.KwyjiboMethodOpenApiResponses = KwyjiboMethodOpenApiResponses;
 class KwyjiboMethod {
     constructor() {
         this.methodMountpoints = [];
@@ -281,6 +298,7 @@ class KwyjiboMethod {
         this.extraParametersMappings = [];
         this.expressCompatible = false;
         this.docString = "";
+        this.openApiResponses = {};
         this.explicitlyDeclared = false;
     }
 }
