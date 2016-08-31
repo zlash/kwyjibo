@@ -597,7 +597,9 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     if (process.env.NODE_ENV === "development") {
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
-    app.use(U.errorHandlers);
+    if (U.errorHandlers.length > 0) {
+        app.use(U.errorHandlers);
+    }
     app.use(onRequestError);
     app.use(onRequestNotFound);
     exports.initialized = true;

@@ -697,7 +697,10 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
-    app.use(U.errorHandlers);
+    if (U.errorHandlers.length > 0) {
+        app.use(U.errorHandlers);
+    }
+    
     app.use(onRequestError);
     app.use(onRequestNotFound);
     initialized = true;
