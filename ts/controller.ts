@@ -460,7 +460,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
     let method: KwyjiboMethod = controller.methods[methodKey];
 
     if (method.explicitlyDeclared === false) {
-        U.defaultWarn(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
+        U.defaultWarnLogger(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
         method.methodMountpoints.push({ "path": `/${methodKey}`, "httpMethod": "get" });
     }
 
@@ -575,7 +575,7 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     }
 
     if (controller.explicitlyDeclared === false) {
-        U.defaultWarn(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
+        U.defaultWarnLogger(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
     }
 
     let instance = Reflect.construct(controller.ctr, []);
@@ -616,13 +616,13 @@ function onRequestError(err: any, req: Express.Request, res: Express.Response, n
         if (process.env.NODE_ENV === "development") {
             res.statusCode = 500;
             if (err instanceof HttpError) {
-                U.defaultError(err);
+                U.defaultErrorLogger(err);
                 res.status(err.code).send(err.message);
             } else if (err instanceof Error) {
-                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                U.defaultErrorLogger({ name: err.name, message: err.message, stack: err.stack });
                 res.json({ name: err.name, message: err.message });
             } else {
-                U.defaultError(err);
+                U.defaultErrorLogger(err);
                 res.json(err);
             }
         } else {
@@ -665,12 +665,12 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         }
 
         try {
-            U.defaultLog("Loading components from: " + path);
+            U.defaultInfoLogger("Loading components from: " + path);
             FS.accessSync(path);
         } catch (err) {
             if ((requiredDirectory !== "controllers" || !implicitControllers) &&
                 (requiredDirectory !== "tests" || !implicitTests)) {
-                U.defaultWarn("Cannot access path: " + path);
+                U.defaultWarnLogger("Cannot access path: " + path);
             }
             continue;
         }
@@ -695,6 +695,7 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
+    app.use(U.errorHandlers);
     app.use(onRequestError);
     app.use(onRequestNotFound);
 }

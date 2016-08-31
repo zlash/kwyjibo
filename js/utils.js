@@ -37,19 +37,24 @@ function UrlJoin(...parts) {
     return ret;
 }
 exports.UrlJoin = UrlJoin;
-exports.defaultError = (toLog) => { console.error(toLog.toString()); };
-exports.defaultWarn = (toLog) => { console.warn(toLog.toString()); };
-exports.defaultLog = (toLog) => { console.log(toLog.toString()); };
-function setDefaultErrorHandler(handler) {
-    exports.defaultError = handler;
+exports.errorHandlers = [];
+exports.defaultErrorLogger = (toLog) => { console.error(toLog); };
+exports.defaultWarnLogger = (toLog) => { console.warn(toLog); };
+exports.defaultInfoLogger = (toLog) => { console.log(toLog); };
+function addErrorHandler(eh) {
+    exports.errorHandlers.push(eh);
+}
+exports.addErrorHandler = addErrorHandler;
+function setDefaultErrorHandler(logger) {
+    exports.defaultErrorLogger = logger;
 }
 exports.setDefaultErrorHandler = setDefaultErrorHandler;
-function setDefaultWarnHandler(handler) {
-    exports.defaultWarn = handler;
+function setDefaultWarnHandler(logger) {
+    exports.defaultWarnLogger = logger;
 }
 exports.setDefaultWarnHandler = setDefaultWarnHandler;
-function setDefaultLogHandler(handler) {
-    exports.defaultLog = handler;
+function setDefaultLogHandler(logger) {
+    exports.defaultInfoLogger = logger;
 }
 exports.setDefaultLogHandler = setDefaultLogHandler;
 //# sourceMappingURL=utils.js.map

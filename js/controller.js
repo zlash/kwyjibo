@@ -402,7 +402,7 @@ function indexAutogenerator(controller, childs) {
 function mountMethod(controller, instance, methodKey) {
     let method = controller.methods[methodKey];
     if (method.explicitlyDeclared === false) {
-        U.defaultWarn(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
+        U.defaultWarnLogger(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
         method.methodMountpoints.push({ "path": `/${methodKey}`, "httpMethod": "get" });
     }
     for (let mp of method.methodMountpoints) {
@@ -495,7 +495,7 @@ function createRouterRecursive(app, controllerNode) {
         return undefined;
     }
     if (controller.explicitlyDeclared === false) {
-        U.defaultWarn(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
+        U.defaultWarnLogger(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
     }
     let instance = Reflect.construct(controller.ctr, []);
     controller.router = Express.Router({ mergeParams: true });
@@ -528,15 +528,15 @@ function onRequestError(err, req, res, next) {
         if (process.env.NODE_ENV === "development") {
             res.statusCode = 500;
             if (err instanceof HttpError) {
-                U.defaultError(err);
+                U.defaultErrorLogger(err);
                 res.status(err.code).send(err.message);
             }
             else if (err instanceof Error) {
-                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                U.defaultErrorLogger({ name: err.name, message: err.message, stack: err.stack });
                 res.json({ name: err.name, message: err.message });
             }
             else {
-                U.defaultError(err);
+                U.defaultErrorLogger(err);
                 res.json(err);
             }
         }
@@ -572,13 +572,13 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
             path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
         }
         try {
-            U.defaultLog("Loading components from: " + path);
+            U.defaultInfoLogger("Loading components from: " + path);
             FS.accessSync(path);
         }
         catch (err) {
             if ((requiredDirectory !== "controllers" || !implicitControllers) &&
                 (requiredDirectory !== "tests" || !implicitTests)) {
-                U.defaultWarn("Cannot access path: " + path);
+                U.defaultWarnLogger("Cannot access path: " + path);
             }
             continue;
         }
@@ -596,6 +596,7 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     if (process.env.NODE_ENV === "development") {
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
+    app.use(U.errorHandlers);
     app.use(onRequestError);
     app.use(onRequestNotFound);
 }
