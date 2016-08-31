@@ -635,6 +635,8 @@ function onRequestNotFound(req: Express.Request, res: Express.Response, next: Fu
     res.sendStatus(404);
 }
 
+export let initialized = false;
+
 export function initialize(app: Express.Application, ...requiredDirectories: string[]): void {
     initializeAtRoute("/", app, ...requiredDirectories);
 }
@@ -698,8 +700,8 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
     app.use(U.errorHandlers);
     app.use(onRequestError);
     app.use(onRequestNotFound);
+    initialized = true;
 }
-
 
 export function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string) {
 

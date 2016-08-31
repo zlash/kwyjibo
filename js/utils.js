@@ -24,6 +24,7 @@ SOFTWARE.
 
 *********************************************************************************/
 "use strict";
+const C = require("./controller");
 function UrlJoin(...parts) {
     let ret = parts.join("/");
     // remove consecutive slashes
@@ -42,19 +43,22 @@ exports.defaultErrorLogger = (toLog) => { console.error(toLog); };
 exports.defaultWarnLogger = (toLog) => { console.warn(toLog); };
 exports.defaultInfoLogger = (toLog) => { console.log(toLog); };
 function addErrorHandler(eh) {
+    if (C.initialized) {
+        throw new Error("Cannot add error handler after Kwyjibo has been initialized.");
+    }
     exports.errorHandlers.push(eh);
 }
 exports.addErrorHandler = addErrorHandler;
-function setDefaultErrorHandler(logger) {
+function setDefaultErrorLogger(logger) {
     exports.defaultErrorLogger = logger;
 }
-exports.setDefaultErrorHandler = setDefaultErrorHandler;
-function setDefaultWarnHandler(logger) {
+exports.setDefaultErrorLogger = setDefaultErrorLogger;
+function setDefaultWarnLogger(logger) {
     exports.defaultWarnLogger = logger;
 }
-exports.setDefaultWarnHandler = setDefaultWarnHandler;
-function setDefaultLogHandler(logger) {
+exports.setDefaultWarnLogger = setDefaultWarnLogger;
+function setDefaultInfoLogger(logger) {
     exports.defaultInfoLogger = logger;
 }
-exports.setDefaultLogHandler = setDefaultLogHandler;
+exports.setDefaultInfoLogger = setDefaultInfoLogger;
 //# sourceMappingURL=utils.js.map

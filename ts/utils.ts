@@ -24,6 +24,8 @@ SOFTWARE.
 
 *********************************************************************************/
 
+import * as C from "./controller"
+
 export function UrlJoin(...parts: string[]): string {
     let ret = parts.join("/");
 
@@ -49,16 +51,19 @@ export let defaultWarnLogger = (toLog: any) => { console.warn(toLog); };
 export let defaultInfoLogger = (toLog: any) => { console.log(toLog); };
 
 export function addErrorHandler(eh: ExpressErrorRequestHandler): void {
+    if (C.initialized) {
+        throw new Error("Cannot add error handler after Kwyjibo has been initialized.");
+    }
     errorHandlers.push(eh);
 }
 
-export function setDefaultErrorHandler(logger: (toLog: any) => void): void {
+export function setDefaultErrorLogger(logger: (toLog: any) => void): void {
     defaultErrorLogger = logger;
 }
 
-export function setDefaultWarnHandler(logger: (toLog: any) => void): void {
+export function setDefaultWarnLogger(logger: (toLog: any) => void): void {
     defaultWarnLogger = logger;
 }
-export function setDefaultLogHandler(logger: (toLog: any) => void): void {
+export function setDefaultInfoLogger(logger: (toLog: any) => void): void {
     defaultInfoLogger = logger;
 }

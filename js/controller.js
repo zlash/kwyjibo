@@ -548,6 +548,7 @@ function onRequestError(err, req, res, next) {
 function onRequestNotFound(req, res, next) {
     res.sendStatus(404);
 }
+exports.initialized = false;
 function initialize(app, ...requiredDirectories) {
     initializeAtRoute("/", app, ...requiredDirectories);
 }
@@ -599,6 +600,7 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     app.use(U.errorHandlers);
     app.use(onRequestError);
     app.use(onRequestNotFound);
+    exports.initialized = true;
 }
 exports.initializeAtRoute = initializeAtRoute;
 function getActionRoute(controller, methodName, httpMethod) {
