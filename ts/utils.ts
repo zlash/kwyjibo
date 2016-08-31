@@ -24,7 +24,7 @@ SOFTWARE.
 
 *********************************************************************************/
 
-import * as C from "./controller"
+import * as C from "./controller";
 
 export function UrlJoin(...parts: string[]): string {
     let ret = parts.join("/");
