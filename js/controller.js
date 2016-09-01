@@ -457,7 +457,7 @@ function mountMethod(controller, instance, methodKey) {
                     ret = yield ret;
                 }
                 if (ret instanceof Object) {
-                    if (ret["$render_view"]) {
+                    if (ret["$render_view"] != undefined) {
                         res.render(ret["$render_view"], ret);
                     }
                     else {
@@ -524,6 +524,17 @@ function createRouterRecursive(app, controllerNode) {
         controller.router.get("/", indexAutogenerator(controller, controllerNode.childs));
     }
     return controller;
+}
+function handleRequestErrorMiddlewares(err, req, res, next) {
+    for (let i = 0; i < U.errorHandlers.length - 1; i++) {
+        U.errorHandlers[i](err, req, res, U.errorHandlers[i + 1]);
+    }
+    if (U.errorHandlers.length > 0) {
+        U.errorHandlers[U.errorHandlers.length - 1](err, req, res, onRequestError);
+    }
+    else {
+        onRequestError(err, req, res, next);
+    }
 }
 function onRequestError(err, req, res, next) {
     if (err.name === "UnauthorizedError") {
@@ -602,10 +613,7 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     if (process.env.NODE_ENV === "development") {
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
-    if (U.errorHandlers.length > 0) {
-        app.use(U.errorHandlers);
-    }
-    app.use(onRequestError);
+    app.use(handleRequestErrorMiddlewares);
     app.use(onRequestNotFound);
     exports.initialized = true;
 }

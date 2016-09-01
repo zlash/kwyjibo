@@ -24,7 +24,6 @@ SOFTWARE.
 
 *********************************************************************************/
 "use strict";
-const C = require("./controller");
 function UrlJoin(...parts) {
     let ret = parts.join("/");
     // remove consecutive slashes
@@ -43,9 +42,6 @@ exports.defaultErrorLogger = (toLog) => { console.error(toLog); };
 exports.defaultWarnLogger = (toLog) => { console.warn(toLog); };
 exports.defaultInfoLogger = (toLog) => { console.log(toLog); };
 function addErrorHandler(eh) {
-    if (C.initialized) {
-        throw new Error("Cannot add error handler after Kwyjibo has been initialized.");
-    }
     exports.errorHandlers.push(eh);
 }
 exports.addErrorHandler = addErrorHandler;

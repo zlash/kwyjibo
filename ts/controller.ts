@@ -523,7 +523,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                 }
 
                 if (ret instanceof Object) {
-                    if (ret["$render_view"]) {
+                    if (ret["$render_view"] != undefined) {
                         res.render(ret["$render_view"], ret);
                     } else {
                         res.json(ret);
@@ -612,8 +612,20 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     return controller;
 }
 
+function handleRequestErrorMiddlewares(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+    for (let i = 0; i < U.errorHandlers.length - 1; i++) {
+        U.errorHandlers[i](err, req, res, U.errorHandlers[i + 1]);
+    }
+
+    if (U.errorHandlers.length > 0) {
+        U.errorHandlers[U.errorHandlers.length - 1](err, req, res, onRequestError);
+    } else {
+        onRequestError(err, req, res, next);
+    }
+}
 
 function onRequestError(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+
     if (err.name === "UnauthorizedError") {
         res.sendStatus(401);
     } else {
@@ -701,11 +713,7 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
-    if (U.errorHandlers.length > 0) {
-        app.use(U.errorHandlers);
-    }
-
-    app.use(onRequestError);
+    app.use(handleRequestErrorMiddlewares);
     app.use(onRequestNotFound);
     initialized = true;
 }
