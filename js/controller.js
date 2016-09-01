@@ -457,7 +457,12 @@ function mountMethod(controller, instance, methodKey) {
                     ret = yield ret;
                 }
                 if (ret instanceof Object) {
-                    res.json(ret);
+                    if (ret["$render_view"]) {
+                        res.render(ret["$render_view"], ret);
+                    }
+                    else {
+                        res.json(ret);
+                    }
                 }
                 else if (typeof (ret) === "string") {
                     res.send(ret);

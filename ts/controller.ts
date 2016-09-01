@@ -523,7 +523,11 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                 }
 
                 if (ret instanceof Object) {
-                    res.json(ret);
+                    if (ret["$render_view"]) {
+                        res.render(ret["$render_view"], ret);
+                    } else {
+                        res.json(ret);
+                    }
                 } else if (typeof (ret) === "string") {
                     res.send(ret);
                 }
@@ -700,7 +704,7 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
     if (U.errorHandlers.length > 0) {
         app.use(U.errorHandlers);
     }
-    
+
     app.use(onRequestError);
     app.use(onRequestNotFound);
     initialized = true;
