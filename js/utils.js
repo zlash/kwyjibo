@@ -41,6 +41,12 @@ exports.errorHandlers = [];
 exports.defaultErrorLogger = (toLog) => { console.error(toLog); };
 exports.defaultWarnLogger = (toLog) => { console.warn(toLog); };
 exports.defaultInfoLogger = (toLog) => { console.log(toLog); };
+class JSONSpec {
+}
+exports.JSONSpec = JSONSpec;
+class Renderable extends JSONSpec {
+}
+exports.Renderable = Renderable;
 function addErrorHandler(eh) {
     exports.errorHandlers.push(eh);
 }

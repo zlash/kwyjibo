@@ -30,7 +30,11 @@ export declare let errorHandlers: ExpressErrorRequestHandler[];
 export declare let defaultErrorLogger: (toLog: any) => void;
 export declare let defaultWarnLogger: (toLog: any) => void;
 export declare let defaultInfoLogger: (toLog: any) => void;
-export interface Renderable {
+export declare type JSONSpecBasicType = number | string | boolean;
+export declare class JSONSpec {
+    [key: string]: JSONSpecBasicType | JSONSpecBasicType[] | JSONSpec | JSONSpec[];
+}
+export declare class Renderable extends JSONSpec {
     $render_view: string;
 }
 export declare function addErrorHandler(eh: ExpressErrorRequestHandler): void;
