@@ -48,13 +48,7 @@ export let defaultErrorLogger = (toLog: any) => { console.error(toLog); };
 export let defaultWarnLogger = (toLog: any) => { console.warn(toLog); };
 export let defaultInfoLogger = (toLog: any) => { console.log(toLog); };
 
-export type JSONSpecBasicType = number | string | boolean;
-
-export class JSONSpec {
-    [key: string]: JSONSpecBasicType | JSONSpecBasicType[] | JSONSpec | JSONSpec[];
-}
-
-export class Renderable extends JSONSpec {
+export interface Renderable {
     $render_view: string;
 }
 
