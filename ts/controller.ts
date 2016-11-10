@@ -63,33 +63,41 @@ export class Context {
 export class HttpError {
     code: number;
     message: string;
-    constructor(code: number, message: string) {
+    constructor(code: number, messageOrError: string | Error) {
         this.code = code;
-        this.message = message;
+        if (messageOrError != undefined) {
+            if (messageOrError instanceof Error) {
+                this.message = messageOrError.message;
+            } else {
+                this.message = messageOrError.toString();
+            }
+        } else {
+            this.message = "";
+        }
     }
 }
 
 export class BadRequest extends HttpError {
-    constructor(message: string) {
-        super(400, message);
+    constructor(messageOrError: string | Error) {
+        super(400, messageOrError);
     }
 }
 
 export class Unauthorized extends HttpError {
-    constructor(message: string) {
-        super(401, message);
+    constructor(messageOrError: string | Error) {
+        super(401, messageOrError);
     }
 }
 
 export class NotFound extends HttpError {
-    constructor(message: string) {
-        super(404, message);
+    constructor(messageOrError: string | Error) {
+        super(404, messageOrError);
     }
 }
 
 export class InternalServerError extends HttpError {
-    constructor(message: string) {
-        super(500, message);
+    constructor(messageOrError: string | Error) {
+        super(500, messageOrError);
     }
 }
 
