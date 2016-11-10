@@ -63,33 +63,41 @@ export class Context {
 export class HttpError {
     code: number;
     message: string;
-    constructor(code: number, message: string) {
+    constructor(code: number, messageOrError: string | Error) {
         this.code = code;
-        this.message = message;
+        if (messageOrError != undefined) {
+            if (messageOrError instanceof Error) {
+                this.message = messageOrError.message;
+            } else {
+                this.message = messageOrError.toString();
+            }
+        } else {
+            this.message = "";
+        }
     }
 }
 
 export class BadRequest extends HttpError {
-    constructor(message: string) {
-        super(400, message);
+    constructor(messageOrError: string | Error) {
+        super(400, messageOrError);
     }
 }
 
 export class Unauthorized extends HttpError {
-    constructor(message: string) {
-        super(401, message);
+    constructor(messageOrError: string | Error) {
+        super(401, messageOrError);
     }
 }
 
 export class NotFound extends HttpError {
-    constructor(message: string) {
-        super(404, message);
+    constructor(messageOrError: string | Error) {
+        super(404, messageOrError);
     }
 }
 
 export class InternalServerError extends HttpError {
-    constructor(message: string) {
-        super(500, message);
+    constructor(messageOrError: string | Error) {
+        super(500, messageOrError);
     }
 }
 
@@ -178,6 +186,7 @@ export function TestRunner(): (f: Function) => void {
 export function Method(method: string, path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         path = (path != undefined) ? path : propertyKey;
+        method = method.toLowerCase();
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.methodMountpoints.push({ "path": U.UrlJoin("/", path), "httpMethod": method });
         m.explicitlyDeclared = true;
@@ -190,6 +199,18 @@ export function Get(path?: string): (a: any, s: string, pd: PropertyDescriptor) 
 
 export function Post(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
     return Method("post", path);
+}
+
+export function Put(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return Method("put", path);
+}
+
+export function Patch(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return Method("patch", path);
+}
+
+export function Delete(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return Method("delete", path);
 }
 
 /** 
@@ -227,6 +248,21 @@ export function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescr
     };
 }
 
+/**
+ *  Attach a OpenApi Response to the method
+ *  @param {number|string} httpCode - The http code used for the response
+ *  @param {string} description - Response description
+ *  @param {string} type - The Open Api defined type.
+ */
+
+export function OpenApiResponse(httpCode: number | string, description: string, type: string): (a: any, s: string, pd: PropertyDescriptor) => void {
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+
+        httpCode = httpCode.toString();
+        m.openApiResponses[httpCode] = { description: description, type: type };
+    };
+}
 
 /*********************************************************
  * Method Parameters Decorators  
@@ -234,30 +270,30 @@ export function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescr
 
 export type RequestValueContainer = "body" | "query" | "path" | "header" | "cookie";
 
-export function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+export function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
     return function (target: any, propertyKey: string, parameterIndex: number) {
         let m = globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
-        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
+        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey, "openApiType": openApiType };
     };
 }
 
-export function FromBody(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("body", valueKey);
+export function FromBody(openApiType?: string, valueKey?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("body", valueKey, openApiType);
 }
 
-export function FromQuery(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("query", valueKey);
+export function FromQuery(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("query", valueKey, openApiType);
 }
 
-export function FromPath(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("path", valueKey);
+export function FromPath(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("path", valueKey, openApiType);
 }
 
-export function FromHeader(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("header", valueKey);
+export function FromHeader(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("header", valueKey, openApiType);
 }
-export function FromCookie(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
-    return MapParameterToRequestValue("cookie", valueKey);
+export function FromCookie(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void {
+    return MapParameterToRequestValue("cookie", valueKey, openApiType);
 }
 
 /*********************************************************
@@ -284,7 +320,11 @@ export function DumpInternals(): void {
 
 
 export type KwyjiboMethodMountpoint = { path: string; httpMethod: string };
-export type KwyjiboExtraParametersMapping = { rvc: RequestValueContainer; valueKey: string };
+export type KwyjiboExtraParametersMapping = { rvc: RequestValueContainer; valueKey: string; openApiType: string; };
+
+export class KwyjiboMethodOpenApiResponses {
+    [httpCode: string]: { description: string; type: string; }
+}
 
 export class KwyjiboMethod {
     methodMountpoints: KwyjiboMethodMountpoint[] = [];
@@ -292,6 +332,7 @@ export class KwyjiboMethod {
     extraParametersMappings: KwyjiboExtraParametersMapping[] = [];
     expressCompatible: boolean = false;
     docString: string = "";
+    openApiResponses: KwyjiboMethodOpenApiResponses = {};
     explicitlyDeclared: boolean = false;
 }
 
@@ -427,7 +468,7 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
     let method: KwyjiboMethod = controller.methods[methodKey];
 
     if (method.explicitlyDeclared === false) {
-        U.defaultWarn(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
+        U.defaultWarnLogger(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
         method.methodMountpoints.push({ "path": `/${methodKey}`, "httpMethod": "get" });
     }
 
@@ -459,7 +500,11 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                         } else {
                             switch (mp.rvc) {
                                 case "body":
-                                    params.push(req.body[mp.valueKey]);
+                                    if (mp.valueKey == undefined || mp.valueKey === "") {
+                                        params.push(req.body);
+                                    } else {
+                                        params.push(req.body[mp.valueKey]);
+                                    }
                                     break;
                                 case "query":
                                     params.push(req.query[mp.valueKey]);
@@ -486,7 +531,11 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                 }
 
                 if (ret instanceof Object) {
-                    res.json(ret);
+                    if (ret["$render_view"] != undefined) {
+                        res.render(ret["$render_view"], ret);
+                    } else {
+                        res.json(ret);
+                    }
                 } else if (typeof (ret) === "string") {
                     res.send(ret);
                 }
@@ -538,11 +587,11 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     }
 
     if (controller.explicitlyDeclared === false) {
-        U.defaultWarn(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
+        U.defaultWarnLogger(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
     }
 
     let instance = Reflect.construct(controller.ctr, []);
-    controller.router = Express.Router();
+    controller.router = Express.Router({ mergeParams: true });
 
     for (let middleware of controller.middleware) {
         controller.router.use(middleware);
@@ -571,20 +620,33 @@ function createRouterRecursive(app: Express.Application, controllerNode: Kwyjibo
     return controller;
 }
 
+function handleRequestErrorMiddlewares(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+    for (let i = 0; i < U.errorHandlers.length - 1; i++) {
+        U.errorHandlers[i](err, req, res, U.errorHandlers[i + 1]);
+    }
+
+    if (U.errorHandlers.length > 0) {
+        U.errorHandlers[U.errorHandlers.length - 1](err, req, res, onRequestError);
+    } else {
+        onRequestError(err, req, res, next);
+    }
+}
 
 function onRequestError(err: any, req: Express.Request, res: Express.Response, next: Function): void {
+
     if (err.name === "UnauthorizedError") {
         res.sendStatus(401);
     } else {
         if (process.env.NODE_ENV === "development") {
-                res.statusCode = 500;
+            res.statusCode = 500;
             if (err instanceof HttpError) {
+                U.defaultErrorLogger(err);
                 res.status(err.code).send(err.message);
             } else if (err instanceof Error) {
-                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                U.defaultErrorLogger({ name: err.name, message: err.message, stack: err.stack });
                 res.json({ name: err.name, message: err.message });
             } else {
-                U.defaultError(err);
+                U.defaultErrorLogger(err);
                 res.json(err);
             }
         } else {
@@ -596,6 +658,8 @@ function onRequestError(err: any, req: Express.Request, res: Express.Response, n
 function onRequestNotFound(req: Express.Request, res: Express.Response, next: Function): void {
     res.sendStatus(404);
 }
+
+export let initialized = false;
 
 export function initialize(app: Express.Application, ...requiredDirectories: string[]): void {
     initializeAtRoute("/", app, ...requiredDirectories);
@@ -627,12 +691,12 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         }
 
         try {
-            U.defaultLog("Loading components from: " + path);
+            U.defaultInfoLogger("Loading components from: " + path);
             FS.accessSync(path);
         } catch (err) {
             if ((requiredDirectory !== "controllers" || !implicitControllers) &&
                 (requiredDirectory !== "tests" || !implicitTests)) {
-                U.defaultWarn("Cannot access path: " + path);
+                U.defaultWarnLogger("Cannot access path: " + path);
             }
             continue;
         }
@@ -657,10 +721,10 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
         app.get(rootPath, indexAutogenerator(undefined, globalKCState.controllersTree));
     }
 
-    app.use(onRequestError);
+    app.use(handleRequestErrorMiddlewares);
     app.use(onRequestNotFound);
+    initialized = true;
 }
-
 
 export function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string) {
 

@@ -42,17 +42,27 @@ export function UrlJoin(...parts: string[]): string {
     return ret;
 }
 
-export let defaultError = (toLog: any) => { console.error(toLog.toString()); };
-export let defaultWarn = (toLog: any) => { console.warn(toLog.toString()); };
-export let defaultLog = (toLog: any) => { console.log(toLog.toString()); };
+export type ExpressErrorRequestHandler = (err: any, req: Express.Request, res: Express.Response, next: Function) => void;
+export let errorHandlers: ExpressErrorRequestHandler[] = [];
+export let defaultErrorLogger = (toLog: any) => { console.error(toLog); };
+export let defaultWarnLogger = (toLog: any) => { console.warn(toLog); };
+export let defaultInfoLogger = (toLog: any) => { console.log(toLog); };
 
-export function setDefaultErrorHandler(handler: (toLog: any) => void): void {
-    defaultError = handler;
+export interface Renderable {
+    $render_view: string;
 }
 
-export function setDefaultWarnHandler(handler: (toLog: any) => void): void {
-    defaultWarn = handler;
+export function addErrorHandler(eh: ExpressErrorRequestHandler): void {
+    errorHandlers.push(eh);
 }
-export function setDefaultLogHandler(handler: (toLog: any) => void): void {
-    defaultLog = handler;
+
+export function setDefaultErrorLogger(logger: (toLog: any) => void): void {
+    defaultErrorLogger = logger;
+}
+
+export function setDefaultWarnLogger(logger: (toLog: any) => void): void {
+    defaultWarnLogger = logger;
+}
+export function setDefaultInfoLogger(logger: (toLog: any) => void): void {
+    defaultInfoLogger = logger;
 }

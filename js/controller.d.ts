@@ -96,6 +96,9 @@ export declare function TestRunner(): (f: Function) => void;
 export declare function Method(method: string, path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 export declare function Get(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 export declare function Post(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Put(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Patch(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+export declare function Delete(path?: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 /**
  * Adds express middleware to run before the method
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
@@ -110,16 +113,23 @@ export declare function ExpressCompatible(): (a: any, s: string, pd: PropertyDes
  *  @param {string} docStr - The documentation string.
  */
 export declare function DocAction(docStr: string): (a: any, s: string, pd: PropertyDescriptor) => void;
+/**
+ *  Attach a OpenApi Response to the method
+ *  @param {number|string} httpCode - The http code used for the response
+ *  @param {string} description - Response description
+ *  @param {string} type - The Open Api defined type.
+ */
+export declare function OpenApiResponse(httpCode: number | string, description: string, type: string): (a: any, s: string, pd: PropertyDescriptor) => void;
 /*********************************************************
  * Method Parameters Decorators
  *********************************************************/
 export declare type RequestValueContainer = "body" | "query" | "path" | "header" | "cookie";
-export declare function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare function FromBody(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare function FromQuery(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare function FromPath(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare function FromHeader(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare function FromCookie(valueKey: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function MapParameterToRequestValue(rvc: RequestValueContainer, valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function FromBody(openApiType?: string, valueKey?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function FromQuery(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function FromPath(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function FromHeader(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function FromCookie(valueKey: string, openApiType?: string): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 /*********************************************************
  * Utils
  *********************************************************/
@@ -134,13 +144,21 @@ export declare type KwyjiboMethodMountpoint = {
 export declare type KwyjiboExtraParametersMapping = {
     rvc: RequestValueContainer;
     valueKey: string;
+    openApiType: string;
 };
+export declare class KwyjiboMethodOpenApiResponses {
+    [httpCode: string]: {
+        description: string;
+        type: string;
+    };
+}
 export declare class KwyjiboMethod {
     methodMountpoints: KwyjiboMethodMountpoint[];
     middleware: Express.RequestHandler[];
     extraParametersMappings: KwyjiboExtraParametersMapping[];
     expressCompatible: boolean;
     docString: string;
+    openApiResponses: KwyjiboMethodOpenApiResponses;
     explicitlyDeclared: boolean;
 }
 export declare type KwyjiboMethodMap = {
@@ -191,6 +209,7 @@ export declare class KwyjiboControllersState {
     getOrInsertController(ctr: Function): KwyjiboController;
     registerMountPoint(dstCtr: any, ctr: Function): void;
 }
+export declare let initialized: boolean;
 export declare function initialize(app: Express.Application, ...requiredDirectories: string[]): void;
 export declare function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void;
 export declare function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string): string;

@@ -37,19 +37,24 @@ function UrlJoin(...parts) {
     return ret;
 }
 exports.UrlJoin = UrlJoin;
-exports.defaultError = (toLog) => { console.error(toLog.toString()); };
-exports.defaultWarn = (toLog) => { console.warn(toLog.toString()); };
-exports.defaultLog = (toLog) => { console.log(toLog.toString()); };
-function setDefaultErrorHandler(handler) {
-    exports.defaultError = handler;
+exports.errorHandlers = [];
+exports.defaultErrorLogger = (toLog) => { console.error(toLog); };
+exports.defaultWarnLogger = (toLog) => { console.warn(toLog); };
+exports.defaultInfoLogger = (toLog) => { console.log(toLog); };
+function addErrorHandler(eh) {
+    exports.errorHandlers.push(eh);
 }
-exports.setDefaultErrorHandler = setDefaultErrorHandler;
-function setDefaultWarnHandler(handler) {
-    exports.defaultWarn = handler;
+exports.addErrorHandler = addErrorHandler;
+function setDefaultErrorLogger(logger) {
+    exports.defaultErrorLogger = logger;
 }
-exports.setDefaultWarnHandler = setDefaultWarnHandler;
-function setDefaultLogHandler(handler) {
-    exports.defaultLog = handler;
+exports.setDefaultErrorLogger = setDefaultErrorLogger;
+function setDefaultWarnLogger(logger) {
+    exports.defaultWarnLogger = logger;
 }
-exports.setDefaultLogHandler = setDefaultLogHandler;
+exports.setDefaultWarnLogger = setDefaultWarnLogger;
+function setDefaultInfoLogger(logger) {
+    exports.defaultInfoLogger = logger;
+}
+exports.setDefaultInfoLogger = setDefaultInfoLogger;
 //# sourceMappingURL=utils.js.map

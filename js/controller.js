@@ -169,6 +169,7 @@ exports.TestRunner = TestRunner;
 function Method(method, path) {
     return function (target, propertyKey, descriptor) {
         path = (path != undefined) ? path : propertyKey;
+        method = method.toLowerCase();
         let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
         m.methodMountpoints.push({ "path": U.UrlJoin("/", path), "httpMethod": method });
         m.explicitlyDeclared = true;
@@ -183,6 +184,18 @@ function Post(path) {
     return Method("post", path);
 }
 exports.Post = Post;
+function Put(path) {
+    return Method("put", path);
+}
+exports.Put = Put;
+function Patch(path) {
+    return Method("patch", path);
+}
+exports.Patch = Patch;
+function Delete(path) {
+    return Method("delete", path);
+}
+exports.Delete = Delete;
 /**
  * Adds express middleware to run before the method
  * @param { Express.RequestHandler[] } middleware - Array of middleware to add.
@@ -217,31 +230,45 @@ function DocAction(docStr) {
     };
 }
 exports.DocAction = DocAction;
-function MapParameterToRequestValue(rvc, valueKey) {
+/**
+ *  Attach a OpenApi Response to the method
+ *  @param {number|string} httpCode - The http code used for the response
+ *  @param {string} description - Response description
+ *  @param {string} type - The Open Api defined type.
+ */
+function OpenApiResponse(httpCode, description, type) {
+    return function (target, propertyKey, descriptor) {
+        let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
+        httpCode = httpCode.toString();
+        m.openApiResponses[httpCode] = { description: description, type: type };
+    };
+}
+exports.OpenApiResponse = OpenApiResponse;
+function MapParameterToRequestValue(rvc, valueKey, openApiType) {
     return function (target, propertyKey, parameterIndex) {
         let m = exports.globalKCState.getOrInsertController(target.constructor).getOrInsertMethod(propertyKey);
-        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey };
+        m.extraParametersMappings[parameterIndex] = { "rvc": rvc, "valueKey": valueKey, "openApiType": openApiType };
     };
 }
 exports.MapParameterToRequestValue = MapParameterToRequestValue;
-function FromBody(valueKey) {
-    return MapParameterToRequestValue("body", valueKey);
+function FromBody(openApiType, valueKey) {
+    return MapParameterToRequestValue("body", valueKey, openApiType);
 }
 exports.FromBody = FromBody;
-function FromQuery(valueKey) {
-    return MapParameterToRequestValue("query", valueKey);
+function FromQuery(valueKey, openApiType) {
+    return MapParameterToRequestValue("query", valueKey, openApiType);
 }
 exports.FromQuery = FromQuery;
-function FromPath(valueKey) {
-    return MapParameterToRequestValue("path", valueKey);
+function FromPath(valueKey, openApiType) {
+    return MapParameterToRequestValue("path", valueKey, openApiType);
 }
 exports.FromPath = FromPath;
-function FromHeader(valueKey) {
-    return MapParameterToRequestValue("header", valueKey);
+function FromHeader(valueKey, openApiType) {
+    return MapParameterToRequestValue("header", valueKey, openApiType);
 }
 exports.FromHeader = FromHeader;
-function FromCookie(valueKey) {
-    return MapParameterToRequestValue("cookie", valueKey);
+function FromCookie(valueKey, openApiType) {
+    return MapParameterToRequestValue("cookie", valueKey, openApiType);
 }
 exports.FromCookie = FromCookie;
 /*********************************************************
@@ -261,6 +288,9 @@ function DumpInternals() {
     }
 }
 exports.DumpInternals = DumpInternals;
+class KwyjiboMethodOpenApiResponses {
+}
+exports.KwyjiboMethodOpenApiResponses = KwyjiboMethodOpenApiResponses;
 class KwyjiboMethod {
     constructor() {
         this.methodMountpoints = [];
@@ -268,6 +298,7 @@ class KwyjiboMethod {
         this.extraParametersMappings = [];
         this.expressCompatible = false;
         this.docString = "";
+        this.openApiResponses = {};
         this.explicitlyDeclared = false;
     }
 }
@@ -371,7 +402,7 @@ function indexAutogenerator(controller, childs) {
 function mountMethod(controller, instance, methodKey) {
     let method = controller.methods[methodKey];
     if (method.explicitlyDeclared === false) {
-        U.defaultWarn(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
+        U.defaultWarnLogger(`Method ${methodKey} was not explicitaly declared with a decorator. Defaulting to GET@/${methodKey}`);
         method.methodMountpoints.push({ "path": `/${methodKey}`, "httpMethod": "get" });
     }
     for (let mp of method.methodMountpoints) {
@@ -398,7 +429,12 @@ function mountMethod(controller, instance, methodKey) {
                         else {
                             switch (mp.rvc) {
                                 case "body":
-                                    params.push(req.body[mp.valueKey]);
+                                    if (mp.valueKey == undefined || mp.valueKey === "") {
+                                        params.push(req.body);
+                                    }
+                                    else {
+                                        params.push(req.body[mp.valueKey]);
+                                    }
                                     break;
                                 case "query":
                                     params.push(req.query[mp.valueKey]);
@@ -421,7 +457,12 @@ function mountMethod(controller, instance, methodKey) {
                     ret = yield ret;
                 }
                 if (ret instanceof Object) {
-                    res.json(ret);
+                    if (ret["$render_view"] != undefined) {
+                        res.render(ret["$render_view"], ret);
+                    }
+                    else {
+                        res.json(ret);
+                    }
                 }
                 else if (typeof (ret) === "string") {
                     res.send(ret);
@@ -459,10 +500,10 @@ function createRouterRecursive(app, controllerNode) {
         return undefined;
     }
     if (controller.explicitlyDeclared === false) {
-        U.defaultWarn(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
+        U.defaultWarnLogger(`Controller ${controller.ctr.name} was not explicitaly declared with a @Controller decorator.`);
     }
     let instance = Reflect.construct(controller.ctr, []);
-    controller.router = Express.Router();
+    controller.router = Express.Router({ mergeParams: true });
     for (let middleware of controller.middleware) {
         controller.router.use(middleware);
     }
@@ -484,6 +525,17 @@ function createRouterRecursive(app, controllerNode) {
     }
     return controller;
 }
+function handleRequestErrorMiddlewares(err, req, res, next) {
+    for (let i = 0; i < U.errorHandlers.length - 1; i++) {
+        U.errorHandlers[i](err, req, res, U.errorHandlers[i + 1]);
+    }
+    if (U.errorHandlers.length > 0) {
+        U.errorHandlers[U.errorHandlers.length - 1](err, req, res, onRequestError);
+    }
+    else {
+        onRequestError(err, req, res, next);
+    }
+}
 function onRequestError(err, req, res, next) {
     if (err.name === "UnauthorizedError") {
         res.sendStatus(401);
@@ -492,14 +544,15 @@ function onRequestError(err, req, res, next) {
         if (process.env.NODE_ENV === "development") {
             res.statusCode = 500;
             if (err instanceof HttpError) {
+                U.defaultErrorLogger(err);
                 res.status(err.code).send(err.message);
             }
             else if (err instanceof Error) {
-                U.defaultError({ name: err.name, message: err.message, stack: err.stack });
+                U.defaultErrorLogger({ name: err.name, message: err.message, stack: err.stack });
                 res.json({ name: err.name, message: err.message });
             }
             else {
-                U.defaultError(err);
+                U.defaultErrorLogger(err);
                 res.json(err);
             }
         }
@@ -511,6 +564,7 @@ function onRequestError(err, req, res, next) {
 function onRequestNotFound(req, res, next) {
     res.sendStatus(404);
 }
+exports.initialized = false;
 function initialize(app, ...requiredDirectories) {
     initializeAtRoute("/", app, ...requiredDirectories);
 }
@@ -535,13 +589,13 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
             path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
         }
         try {
-            U.defaultLog("Loading components from: " + path);
+            U.defaultInfoLogger("Loading components from: " + path);
             FS.accessSync(path);
         }
         catch (err) {
             if ((requiredDirectory !== "controllers" || !implicitControllers) &&
                 (requiredDirectory !== "tests" || !implicitTests)) {
-                U.defaultWarn("Cannot access path: " + path);
+                U.defaultWarnLogger("Cannot access path: " + path);
             }
             continue;
         }
@@ -559,8 +613,9 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     if (process.env.NODE_ENV === "development") {
         app.get(rootPath, indexAutogenerator(undefined, exports.globalKCState.controllersTree));
     }
-    app.use(onRequestError);
+    app.use(handleRequestErrorMiddlewares);
     app.use(onRequestNotFound);
+    exports.initialized = true;
 }
 exports.initializeAtRoute = initializeAtRoute;
 function getActionRoute(controller, methodName, httpMethod) {

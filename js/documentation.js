@@ -26,6 +26,12 @@ SOFTWARE.
 "use strict";
 const controller_1 = require("./controller");
 const U = require("./utils");
+class ParamsDoc {
+}
+exports.ParamsDoc = ParamsDoc;
+class ResponsesDoc {
+}
+exports.ResponsesDoc = ResponsesDoc;
 class MethodDoc {
 }
 exports.MethodDoc = MethodDoc;
@@ -46,6 +52,20 @@ function getControllerDocNodeAndChilds(rootCdns, node) {
         m.name = methodKey;
         m.docString = method.docString;
         m.mountpoints = method.methodMountpoints;
+        m.params = [];
+        m.responses = {};
+        for (let rk in method.openApiResponses) {
+            m.responses[rk] = method.openApiResponses[rk];
+        }
+        for (let param of method.extraParametersMappings) {
+            if (param != undefined) {
+                m.params.push({
+                    name: param.valueKey,
+                    rvc: param.rvc,
+                    openApiType: param.openApiType
+                });
+            }
+        }
         cdn.methods.push(m);
     }
     for (let child of node.childs) {

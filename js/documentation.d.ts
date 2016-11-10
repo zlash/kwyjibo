@@ -24,10 +24,23 @@ SOFTWARE.
 
 *********************************************************************************/
 import { KwyjiboMethodMountpoint } from "./controller";
+export declare class ParamsDoc {
+    name: string;
+    rvc: string;
+    openApiType: string;
+}
+export declare class ResponsesDoc {
+    [httpMethod: string]: {
+        description: string;
+        type: string;
+    };
+}
 export declare class MethodDoc {
     name: string;
     docString: string;
     mountpoints: KwyjiboMethodMountpoint[];
+    params: ParamsDoc[];
+    responses: ResponsesDoc;
 }
 export declare class ControllerDocNode {
     name: string;
