@@ -27,7 +27,8 @@ SOFTWARE.
 import * as Express from "express";
 import * as U from "./utils";
 import * as T from "./testing";
-import * as FS from "fs";
+import * as FS from "fs"; 
+import * as Path from "path";
 
 export interface IDisposable {
     dispose(): void;
@@ -662,7 +663,7 @@ function onRequestNotFound(req: Express.Request, res: Express.Response, next: Fu
 export let initialized = false;
 
 export function initialize(app: Express.Application, ...requiredDirectories: string[]): void {
-    initializeAtRoute("/", app, ...requiredDirectories);
+    initializeAtRoute(Path.sep, app, ...requiredDirectories);
 }
 
 export function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
@@ -684,10 +685,10 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
 
         let path = "";
 
-        if (requiredDirectory.charAt(0) == "/") {
+        if (requiredDirectory.charAt(0) == Path.sep) {
             path = requiredDirectory;
         } else {
-            path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
+            path = Path.join(process.cwd(), requiredDirectory);
         }
 
         try {

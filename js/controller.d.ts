@@ -1,3 +1,5 @@
+/// <reference types="express" />
+/// <reference types="node" />
 /*********************************************************************************
 
 MIT License
@@ -44,19 +46,19 @@ export declare class Context {
 export declare class HttpError {
     code: number;
     message: string;
-    constructor(code: number, message: string);
+    constructor(code: number, messageOrError: string | Error);
 }
 export declare class BadRequest extends HttpError {
-    constructor(message: string);
+    constructor(messageOrError: string | Error);
 }
 export declare class Unauthorized extends HttpError {
-    constructor(message: string);
+    constructor(messageOrError: string | Error);
 }
 export declare class NotFound extends HttpError {
-    constructor(message: string);
+    constructor(messageOrError: string | Error);
 }
 export declare class InternalServerError extends HttpError {
-    constructor(message: string);
+    constructor(messageOrError: string | Error);
 }
 export declare let globalKCState: KwyjiboControllersState;
 /*********************************************************
