@@ -36,6 +36,7 @@ const Express = require("express");
 const U = require("./utils");
 const T = require("./testing");
 const FS = require("fs");
+const Path = require("path");
 /**
  * Contains context for the current call .
  */
@@ -56,33 +57,43 @@ class Context {
 }
 exports.Context = Context;
 class HttpError {
-    constructor(code, message) {
+    constructor(code, messageOrError) {
         this.code = code;
-        this.message = message;
+        if (messageOrError != undefined) {
+            if (messageOrError instanceof Error) {
+                this.message = messageOrError.message;
+            }
+            else {
+                this.message = messageOrError.toString();
+            }
+        }
+        else {
+            this.message = "";
+        }
     }
 }
 exports.HttpError = HttpError;
 class BadRequest extends HttpError {
-    constructor(message) {
-        super(400, message);
+    constructor(messageOrError) {
+        super(400, messageOrError);
     }
 }
 exports.BadRequest = BadRequest;
 class Unauthorized extends HttpError {
-    constructor(message) {
-        super(401, message);
+    constructor(messageOrError) {
+        super(401, messageOrError);
     }
 }
 exports.Unauthorized = Unauthorized;
 class NotFound extends HttpError {
-    constructor(message) {
-        super(404, message);
+    constructor(messageOrError) {
+        super(404, messageOrError);
     }
 }
 exports.NotFound = NotFound;
 class InternalServerError extends HttpError {
-    constructor(message) {
-        super(500, message);
+    constructor(messageOrError) {
+        super(500, messageOrError);
     }
 }
 exports.InternalServerError = InternalServerError;
@@ -582,11 +593,11 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     }
     for (let requiredDirectory of requiredDirectories) {
         let path = "";
-        if (requiredDirectory.charAt(0) == "/") {
+        if (Path.isAbsolute(requiredDirectory)) {
             path = requiredDirectory;
         }
         else {
-            path = U.UrlJoin(process.cwd(), "/", requiredDirectory);
+            path = Path.join(process.cwd(), requiredDirectory);
         }
         try {
             U.defaultInfoLogger("Loading components from: " + path);
