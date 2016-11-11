@@ -663,7 +663,7 @@ function onRequestNotFound(req: Express.Request, res: Express.Response, next: Fu
 export let initialized = false;
 
 export function initialize(app: Express.Application, ...requiredDirectories: string[]): void {
-    initializeAtRoute(Path.sep, app, ...requiredDirectories);
+    initializeAtRoute("/", app, ...requiredDirectories);
 }
 
 export function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void {
@@ -685,7 +685,7 @@ export function initializeAtRoute(rootPath: string, app: Express.Application, ..
 
         let path = "";
 
-        if (requiredDirectory.charAt(0) == Path.sep) {
+        if (Path.isAbsolute(requiredDirectory)) {
             path = requiredDirectory;
         } else {
             path = Path.join(process.cwd(), requiredDirectory);

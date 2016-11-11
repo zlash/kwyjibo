@@ -577,7 +577,7 @@ function onRequestNotFound(req, res, next) {
 }
 exports.initialized = false;
 function initialize(app, ...requiredDirectories) {
-    initializeAtRoute(Path.sep, app, ...requiredDirectories);
+    initializeAtRoute("/", app, ...requiredDirectories);
 }
 exports.initialize = initialize;
 function initializeAtRoute(rootPath, app, ...requiredDirectories) {
@@ -593,7 +593,7 @@ function initializeAtRoute(rootPath, app, ...requiredDirectories) {
     }
     for (let requiredDirectory of requiredDirectories) {
         let path = "";
-        if (requiredDirectory.charAt(0) == Path.sep) {
+        if (Path.isAbsolute(requiredDirectory)) {
             path = requiredDirectory;
         }
         else {
