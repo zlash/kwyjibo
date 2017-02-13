@@ -50,6 +50,7 @@ export let defaultInfoLogger = (toLog: any) => { console.log(toLog); };
 
 export interface Renderable {
     $render_view: string;
+    [key: string]: any;
 }
 
 export function addErrorHandler(eh: ExpressErrorRequestHandler): void {
