@@ -1,3 +1,4 @@
+/// <reference types="express" />
 /// <reference types="node" />
 /*********************************************************************************
 
@@ -25,6 +26,7 @@ SOFTWARE.
 
 *********************************************************************************/
 import * as Express from "express";
+import * as U from "./utils";
 import * as Stream from "stream";
 export interface IDisposable {
     dispose(): void;
@@ -223,3 +225,4 @@ export declare let initialized: boolean;
 export declare function initialize(app: Express.Application, ...requiredDirectories: string[]): void;
 export declare function initializeAtRoute(rootPath: string, app: Express.Application, ...requiredDirectories: string[]): void;
 export declare function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, methodName: string, httpMethod?: string): string;
+export declare function getRoutes(replacements?: U.Dictionary<string>): any;
