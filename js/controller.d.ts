@@ -1,4 +1,3 @@
-/// <reference types="express" />
 /// <reference types="node" />
 /*********************************************************************************
 
@@ -26,6 +25,7 @@ SOFTWARE.
 
 *********************************************************************************/
 import * as Express from "express";
+import * as Stream from "stream";
 export interface IDisposable {
     dispose(): void;
 }
@@ -59,6 +59,14 @@ export declare class NotFound extends HttpError {
 }
 export declare class InternalServerError extends HttpError {
     constructor(messageOrError: string | Error);
+}
+export declare class FileServe {
+    file: string | Stream.Readable;
+    filename: string;
+    contentType: string;
+    forceAttachment: boolean;
+    constructor(file: string | Stream.Readable, filename?: string, extension?: string, forceAttachment?: boolean);
+    sendHeaders(res: Express.Response): void;
 }
 export declare let globalKCState: KwyjiboControllersState;
 /*********************************************************

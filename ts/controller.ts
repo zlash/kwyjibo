@@ -27,8 +27,9 @@ SOFTWARE.
 import * as Express from "express";
 import * as U from "./utils";
 import * as T from "./testing";
-import * as FS from "fs"; 
+import * as FS from "fs";
 import * as Path from "path";
+import * as Stream from "stream";
 
 export interface IDisposable {
     dispose(): void;
@@ -99,6 +100,27 @@ export class NotFound extends HttpError {
 export class InternalServerError extends HttpError {
     constructor(messageOrError: string | Error) {
         super(500, messageOrError);
+    }
+}
+
+export class FileServe {
+    file: string | Stream.Readable;
+    filename: string;
+    contentType: string;
+    forceAttachment: boolean;
+
+    constructor(file: string | Stream.Readable, filename?: string, extension?: string, forceAttachment?: boolean) {
+        this.file = file;
+        this.filename = filename != undefined ? filename : (typeof (file) === "string" ? (Path.basename(file)) : "file");
+        extension = extension != undefined ? extension : this.filename;
+        this.contentType = require("mime-types").contentType(extension);
+        this.forceAttachment = !!forceAttachment;
+    }
+
+    sendHeaders(res: Express.Response) {
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Content-Type", this.contentType);
+        res.setHeader("Content-Disposition", `${this.forceAttachment ? "attachment" : "inline"}; filename=${this.filename}`);
     }
 }
 
@@ -319,7 +341,6 @@ export function DumpInternals(): void {
  * Internals
  *********************************************************/
 
-
 export type KwyjiboMethodMountpoint = { path: string; httpMethod: string };
 export type KwyjiboExtraParametersMapping = { rvc: RequestValueContainer; valueKey: string; openApiType: string; };
 
@@ -462,7 +483,29 @@ function indexAutogenerator(controller: KwyjiboController, childs: KwyjiboContro
     };
 }
 
+async function serveFile(res: Express.Response, file: FileServe) {
+    if (typeof (file.file) === "string") {
 
+        await new Promise((resolve, reject) => {
+            FS.access(file.file as string, FS["R_OK"], (err) => {
+                if (err != undefined) {
+                    throw new NotFound(err);
+                }
+
+                let filestream = FS.createReadStream(file.file as string);
+                file.sendHeaders(res);
+                filestream.pipe(res);
+            });
+        });
+
+    } else if (file.file instanceof Stream.Readable) {
+        file.sendHeaders(res);
+        file.file.pipe(res);
+    } else {
+        throw new Error("Invalid file type on FileServe");
+    }
+
+}
 
 function mountMethod(controller: KwyjiboController, instance: any, methodKey: string): void {
 
@@ -531,7 +574,9 @@ function mountMethod(controller: KwyjiboController, instance: any, methodKey: st
                     ret = await ret;
                 }
 
-                if (ret instanceof Object) {
+                if (ret instanceof FileServe) {
+                    serveFile(res, ret);
+                } else if (ret instanceof Object) {
                     if (ret["$render_view"] != undefined) {
                         res.render(ret["$render_view"], ret);
                     } else {

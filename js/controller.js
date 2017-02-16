@@ -37,6 +37,7 @@ const U = require("./utils");
 const T = require("./testing");
 const FS = require("fs");
 const Path = require("path");
+const Stream = require("stream");
 /**
  * Contains context for the current call .
  */
@@ -97,6 +98,21 @@ class InternalServerError extends HttpError {
     }
 }
 exports.InternalServerError = InternalServerError;
+class FileServe {
+    constructor(file, filename, extension, forceAttachment) {
+        this.file = file;
+        this.filename = filename != undefined ? filename : (typeof (file) === "string" ? (Path.basename(file)) : "file");
+        extension = extension != undefined ? extension : this.filename;
+        this.contentType = require("mime-types").contentType(extension);
+        this.forceAttachment = !!forceAttachment;
+    }
+    sendHeaders(res) {
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Content-Type", this.contentType);
+        res.setHeader("Content-Disposition", `${this.forceAttachment ? "attachment" : "inline"}; filename=${this.filename}`);
+    }
+}
+exports.FileServe = FileServe;
 /*********************************************************
  * Class Decorators
  *********************************************************/
@@ -410,6 +426,29 @@ function indexAutogenerator(controller, childs) {
         res.send(content);
     };
 }
+function serveFile(res, file) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (typeof (file.file) === "string") {
+            yield new Promise((resolve, reject) => {
+                FS.access(file.file, FS["R_OK"], (err) => {
+                    if (err != undefined) {
+                        throw new NotFound(err);
+                    }
+                    let filestream = FS.createReadStream(file.file);
+                    file.sendHeaders(res);
+                    filestream.pipe(res);
+                });
+            });
+        }
+        else if (file.file instanceof Stream.Readable) {
+            file.sendHeaders(res);
+            file.file.pipe(res);
+        }
+        else {
+            throw new Error("Invalid file type on FileServe");
+        }
+    });
+}
 function mountMethod(controller, instance, methodKey) {
     let method = controller.methods[methodKey];
     if (method.explicitlyDeclared === false) {
@@ -467,7 +506,10 @@ function mountMethod(controller, instance, methodKey) {
                 if (ret instanceof Promise) {
                     ret = yield ret;
                 }
-                if (ret instanceof Object) {
+                if (ret instanceof FileServe) {
+                    serveFile(res, ret);
+                }
+                else if (ret instanceof Object) {
                     if (ret["$render_view"] != undefined) {
                         res.render(ret["$render_view"], ret);
                     }
