@@ -32,8 +32,12 @@ export declare let defaultWarnLogger: (toLog: any) => void;
 export declare let defaultInfoLogger: (toLog: any) => void;
 export interface Renderable {
     $render_view: string;
+    [key: string]: any;
 }
 export declare function addErrorHandler(eh: ExpressErrorRequestHandler): void;
 export declare function setDefaultErrorLogger(logger: (toLog: any) => void): void;
 export declare function setDefaultWarnLogger(logger: (toLog: any) => void): void;
 export declare function setDefaultInfoLogger(logger: (toLog: any) => void): void;
+export interface Dictionary<T> {
+    [key: string]: T;
+}

@@ -67,3 +67,7 @@ export function setDefaultWarnLogger(logger: (toLog: any) => void): void {
 export function setDefaultInfoLogger(logger: (toLog: any) => void): void {
     defaultInfoLogger = logger;
 }
+
+export interface Dictionary<T> {
+    [key: string]: T;
+}

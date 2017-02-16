@@ -26,6 +26,7 @@ SOFTWARE.
 
 import * as Express from "express";
 import * as U from "./utils";
+import * as D from "./documentation";
 import * as T from "./testing";
 import * as FS from "fs";
 import * as Path from "path";
@@ -791,5 +792,45 @@ export function getActionRoute<T>(controller: KwyjiboControllerConstructor<T>, m
     }
 
     return "";
+}
+
+function controllerDocToRoutes(controllers: D.ControllerDocNode[], baseUrl?: string, replacements?: U.Dictionary<string>) {
+    if (baseUrl == undefined) {
+        baseUrl = "";
+    }
+
+    if (replacements == undefined) {
+        replacements = {};
+    }
+
+    let routes: any = {};
+    for (let controller of controllers) {
+        routes[controller.name] = {};
+        for (let method of controller.methods) {
+            routes[controller.name][method.name] = {};
+            for (let mountPoint of method.mountpoints) {
+                let url = baseUrl + controller.path + mountPoint.path;
+
+                for (let key in replacements) {
+                    url = url.replace(new RegExp(key, "g"), replacements[key]);
+                }
+
+                routes[controller.name][method.name][mountPoint.httpMethod] = url;
+            }
+        }
+
+        let childRoutes = controllerDocToRoutes(controller.childs, controller.path);
+
+        routes = {
+            ...routes,
+            ...childRoutes
+        };
+    }
+
+    return routes;
+}
+
+export function getRoutes(replacements ?: U.Dictionary<string>) {
+    return controllerDocToRoutes(D.getDocs(), undefined, replacements);
 }
 

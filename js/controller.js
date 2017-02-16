@@ -24,16 +24,25 @@ SOFTWARE.
 
 *********************************************************************************/
 "use strict";
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments)).next());
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 const Express = require("express");
 const U = require("./utils");
+const D = require("./documentation");
 const T = require("./testing");
 const FS = require("fs");
 const Path = require("path");
@@ -687,4 +696,33 @@ function getActionRoute(controller, methodName, httpMethod) {
     return "";
 }
 exports.getActionRoute = getActionRoute;
+function controllerDocToRoutes(controllers, baseUrl, replacements) {
+    if (baseUrl == undefined) {
+        baseUrl = "";
+    }
+    if (replacements == undefined) {
+        replacements = {};
+    }
+    let routes = {};
+    for (let controller of controllers) {
+        routes[controller.name] = {};
+        for (let method of controller.methods) {
+            routes[controller.name][method.name] = {};
+            for (let mountPoint of method.mountpoints) {
+                let url = baseUrl + controller.path + mountPoint.path;
+                for (let key in replacements) {
+                    url = url.replace(new RegExp(key, "g"), replacements[key]);
+                }
+                routes[controller.name][method.name][mountPoint.httpMethod] = url;
+            }
+        }
+        let childRoutes = controllerDocToRoutes(controller.childs, controller.path);
+        routes = __assign({}, routes, childRoutes);
+    }
+    return routes;
+}
+function getRoutes(replacements) {
+    return controllerDocToRoutes(D.getDocs(), undefined, replacements);
+}
+exports.getRoutes = getRoutes;
 //# sourceMappingURL=controller.js.map
