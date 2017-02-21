@@ -174,7 +174,7 @@ class UsersController {
 If you want to use the standard Express route method signature, instead of just receiving the `context` object (useful to migrate classic Express apps to Kwyjibo), you can use the `@ExpressCompatible` decorator and create methods like this:
 
 ```typescript
-@Get("/somewhere)
+@Get("/somewhere")
 @ExpressCompatible()
 myExpressCompatibleAction(req: Express.Request, res: Express.Response, next: Function): void {
 	// do something
